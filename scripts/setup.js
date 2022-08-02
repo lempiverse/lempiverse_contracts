@@ -12,7 +12,7 @@ async function main() {
   const cmap =
   {
     1: {'name':'LempiverseRootMintableERC1155',
-        'address':'',
+        'address':'0xC6CEF0Fcd9aDE5B60c25b14E46A47Bd48D4C397F',
         'metataddress':''},
 
     5: {'name':'LempiverseRootMintableERC1155',
@@ -20,7 +20,7 @@ async function main() {
         'metataddress':''},
 
     137: {'name':'LempiverseChildMintableERC1155',
-          'address':'',
+          'address':'0x08bbe53cd50B8F03296E59b7FD4AEA325546921a',
           'metataddress':'0x207Fa8Df3a17D96Ca7EA4f2893fcdCb78a304101'},
 
     80001: {'name':'LempiverseChildMintableERC1155',
@@ -43,12 +43,12 @@ async function main() {
 
   const data = hre.ethers.utils.arrayify("0x00");
 
-  if (cmap[chainId].metataddress != "") {
-    tx = await contract.functions.setupMetaTransactionOperator(cmap[chainId].metataddress);
-    console.log(tx['hash']);
-    r = await tx.wait();
-    console.log(r);
-  }
+  // if (cmap[chainId].metataddress != "") {
+  //   tx = await contract.functions.setupMetaTransactionOperator(cmap[chainId].metataddress);
+  //   console.log(tx['hash']);
+  //   r = await tx.wait();
+  //   console.log(r);
+  // }
 
 
   tx = await contract.functions.mint(owner.address, TOKEN_ID, 1, data);
@@ -56,20 +56,20 @@ async function main() {
   r = await tx.wait();
   console.log(r);
 
-  tx = await contract.functions.setBaseURI("https://cloudflare-ipfs.com/ipfs/");
-  console.log(tx['hash']);
-  r = await tx.wait();
-  console.log(r);
+  // tx = await contract.functions.setBaseURI("https://cloudflare-ipfs.com/ipfs/");
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
 
-  tx = await contract.functions.setURI(TOKEN_ID, "bafkreigehevahojbpmchkbeuhaacczg7mf32nqjlwj6d3pa7iuxhmtltpe");
-  console.log(tx['hash']);
-  r = await tx.wait();
-  console.log(r);
+  // tx = await contract.functions.setURI(TOKEN_ID, "bafkreigehevahojbpmchkbeuhaacczg7mf32nqjlwj6d3pa7iuxhmtltpe");
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
 
-  tx = await contract.functions.setDefaultRoyalty(owner.address, 100);
-  console.log(tx['hash']);
-  r = await tx.wait();
-  console.log(r);
+  // tx = await contract.functions.setDefaultRoyalty(owner.address, 100);
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
 
 
   const uri = await contract.callStatic.uri(TOKEN_ID);

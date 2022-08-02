@@ -1,5 +1,6 @@
 require('dotenv').config();
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const ALCHEMY_MAINNET_KEY = process.env.ALCHEMY_MAINNET_KEY;
 
 require("@nomiclabs/hardhat-truffle5");
 require("@nomicfoundation/hardhat-toolbox");
@@ -17,7 +18,7 @@ module.exports = {
       accounts: [PRIVATE_KEY]
     },
     matic: {
-      gasLimit: 60000000000,
+      gasLimit: 60_000_000_000,
       url: "https://rpc-mainnet.maticvigil.com",
       accounts: [PRIVATE_KEY]
     },
@@ -25,6 +26,12 @@ module.exports = {
       gasPrice: 1000000000,
       gasLimit: 60000000000,
       url: "https://goerli.prylabs.net",
+      accounts: [PRIVATE_KEY]
+    },
+    mainnet: {
+      gasPrice: 17_000_000_000,
+      gasLimit: 60000000000,
+      url: "https://eth-mainnet.g.alchemy.com/v2/"+ALCHEMY_MAINNET_KEY,
       accounts: [PRIVATE_KEY]
     }
   },
