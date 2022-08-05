@@ -43,33 +43,40 @@ async function main() {
 
   const data = hre.ethers.utils.arrayify("0x00");
 
-  if (cmap[chainId].metataddress != "") {
-    tx = await contract.functions.setupMetaTransactionOperator(cmap[chainId].metataddress);
-    console.log(tx['hash']);
-    r = await tx.wait();
-    console.log(r);
-  }
+  // if (cmap[chainId].metataddress != "") {
+  //   tx = await contract.functions.setupMetaTransactionOperator(cmap[chainId].metataddress);
+  //   console.log(tx['hash']);
+  //   r = await tx.wait();
+  //   console.log(r);
+  // }
 
 
-  tx = await contract.functions.mint(owner.address, TOKEN_ID, 1, data);
+  // tx = await contract.functions.mint(owner.address, TOKEN_ID, 1000, data);
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
+
+
+  // tx = await contract.functions.safeTransferFrom(owner.address, "0x987C483F51296156203a7696c939f7eeFf04A894", TOKEN_ID, 100, data);
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
+
+
+  // tx = await contract.functions.setBaseURI("https://cloudflare-ipfs.com/ipfs/");
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
+
+  tx = await contract.functions.setURI(TOKEN_ID, "bafkreig6dpfqrv3p4klu63qhpa5lgf443k6fqmcw6xjhrc2worep7anbce");
   console.log(tx['hash']);
   r = await tx.wait();
   console.log(r);
 
-  tx = await contract.functions.setBaseURI("https://cloudflare-ipfs.com/ipfs/");
-  console.log(tx['hash']);
-  r = await tx.wait();
-  console.log(r);
-
-  tx = await contract.functions.setURI(TOKEN_ID, "bafkreigehevahojbpmchkbeuhaacczg7mf32nqjlwj6d3pa7iuxhmtltpe");
-  console.log(tx['hash']);
-  r = await tx.wait();
-  console.log(r);
-
-  tx = await contract.functions.setDefaultRoyalty(owner.address, 100);
-  console.log(tx['hash']);
-  r = await tx.wait();
-  console.log(r);
+  // tx = await contract.functions.setDefaultRoyalty(owner.address, 500);
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
 
 
   const uri = await contract.callStatic.uri(TOKEN_ID);
