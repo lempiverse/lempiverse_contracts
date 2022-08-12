@@ -135,8 +135,7 @@ describe('Minter', function () {
   });
 
 
-  async function mintOrNotToMint(mode) {
-    const amount = 1;
+  async function mintOrNotToMint(mode, amount) {
     const value = amount * price;
 
     const buyer = await getBuyer();
@@ -208,12 +207,16 @@ describe('Minter', function () {
 
 
   it('Should revert on LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS', async function () {
-    await mintOrNotToMint(1);
+    await mintOrNotToMint(1, 1);
   });
 
 
   it('accepts owner signature', async function () {
-    await mintOrNotToMint(0);
+    await mintOrNotToMint(0, 1);
+  });
+
+  it('accepts owner signature several amount', async function () {
+    await mintOrNotToMint(0, 10);
   });
 
 });
