@@ -3,8 +3,8 @@ const ethSigUtil = require('eth-sig-util');
 const EIP712Domain = [
   { name: 'name', type: 'string' },
   { name: 'version', type: 'string' },
-  { name: 'chainId', type: 'uint256' },
   { name: 'verifyingContract', type: 'address' },
+  { name: 'salt', type: 'bytes32' },
 ];
 
 const Permit = [
@@ -15,10 +15,11 @@ const Permit = [
   { name: 'deadline', type: 'uint256' },
 ];
 
-async function domainSeparator (name, version, chainId, verifyingContract) {
+async function domainSeparator (name, version, verifyingContract, salt) {
+  // console.log("domainSeparator call", name, version, verifyingContract, salt);
   return '0x' + ethSigUtil.TypedDataUtils.hashStruct(
     'EIP712Domain',
-    { name, version, chainId, verifyingContract },
+    { name, version, verifyingContract, salt },
     { EIP712Domain },
   ).toString('hex');
 }

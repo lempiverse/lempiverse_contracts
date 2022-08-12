@@ -8,6 +8,8 @@
 
 pragma solidity ^0.8.9;
 
+import "hardhat/console.sol";
+
 /*
  * @dev Provides information about the current execution context, including the
  * sender of the transaction and its data. While these are generally available
@@ -1629,6 +1631,9 @@ library EIP712 {
             chainId := chainid()
         }
 
+        // console.log("makeDomainSeparator");
+        // console.log(name, version, chainId, address(this));
+
         return
             keccak256(
                 abi.encode(
@@ -3101,6 +3106,14 @@ contract UChildAdministrableERC20 is
             id := chainid()
         }
         return id;
+    }
+
+   function getChainId32() public view returns (bytes32) {
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        return bytes32(id);
     }
 
 }

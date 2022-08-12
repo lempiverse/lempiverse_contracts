@@ -4,6 +4,7 @@ const ethSigUtil = require('eth-sig-util');
 const Wallet = require('ethereumjs-wallet').default;
 const { expect } = require('chai');
 
+
 const hre = require("hardhat");
 
 const { MAX_UINT256, ZERO_ADDRESS, ZERO_BYTES32 } = constants;
@@ -31,10 +32,9 @@ describe('Minter', function () {
 
   const tokenId = "11";
   const mintLimit = 10;
-  const mintAmount = new BN(2);
 
 
-  const privKey1 = "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+  const privKey1 = "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
   const key1 = Uint8Array.from(Buffer.from(privKey1, "hex"));
 
   const price = 10;
@@ -51,6 +51,12 @@ describe('Minter', function () {
     return await(await getBuyer()).getAddress();
   }
 
+  async function getAdmin() {
+    const [admin] = await hre.ethers.getSigners();
+    return admin;
+  }
+
+
 
   beforeEach(async function () {
     const buyer = await getBuyerAddress();
@@ -64,31 +70,36 @@ describe('Minter', function () {
     minter = await LempiverseNftEggMinter.deploy();
     token = await LempiverseChildMintableERC1155.deploy('0x0000000000000000000000000000000000000000');
 
-    console.log(paymentToken.address, buyer, minter.address);
-
     await paymentToken.initialize(name, symbol, 6);
     await paymentToken.mint(buyer, 10000 * 1e6);
 
     chainId = parseInt(await paymentToken.getChainId());
-    // chainId = parseInt(await hre.network.provider.send("eth_chainId"));
-    console.log(chainId);
 
     await minter.setup(paymentToken.address, token.address, price, tokenId, mintLimit);
 
   });
 
 
+  function encodeIntAsByte32(digit) {
+    var array = new Array(32).fill(0);
+    var n = digit
+    for (var i = 0; i<4; i++) {
+        array[31-i] = n & 0xff
+        n >>= 8
+    }
+    return array;
+  }
 
 
-  const buildData = (chainId, verifyingContract, owner, spender, value, deadline = maxDeadline) => ({
+  const buildData = (salt, verifyingContract, owner, spender, value, deadline = maxDeadline) => ({
     primaryType: 'Permit',
     types: { EIP712Domain, Permit },
-    domain: { name, version, chainId, verifyingContract },
+    domain: { name, version, verifyingContract, salt },
     message: { owner, spender, value, nonce, deadline },
   });
 
   async function buildVRS (buyer, value) {
-    const data = buildData(chainId, paymentToken.address, buyer, minter.address, value);
+    const data = buildData(encodeIntAsByte32(chainId), paymentToken.address, buyer, minter.address, value);
     const signature = ethSigUtil.signTypedMessage(key1, { data });
     return fromRpcSig(signature);
   };
@@ -102,8 +113,29 @@ describe('Minter', function () {
     await expect(minter.mint(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
 
-  it('accepts owner signature', async function () {
+  it('Should revert on no permission for start/stop sale', async function () {
 
+    const buyer = await getBuyer();
+
+    await expect(minter.connect(buyer).startSale()).to.be.revertedWith("LempiverseNftEggMinter: INSUFFICIENT_PERMISSIONS");
+    await expect(minter.connect(buyer).stopSale()).to.be.revertedWith("LempiverseNftEggMinter: INSUFFICIENT_PERMISSIONS");
+  });
+
+
+  it('domain separator', async function () {
+    const array = encodeIntAsByte32(chainId);
+    const array8 = Uint8Array.from(array);
+
+    const buff = Uint8Array.from(Buffer.from((await paymentToken.getChainId32()).toString().slice(2), "hex"));
+
+    expect(buff.toString()).to.equal(array8.toString());
+
+    const myDs = await domainSeparator(name, version, paymentToken.address, array);
+    expect(await paymentToken.DOMAIN_SEPARATOR()).to.equal(myDs);
+  });
+
+
+  async function mintOrNotToMint(mode) {
     const amount = 1;
     const value = amount * price;
 
@@ -111,39 +143,78 @@ describe('Minter', function () {
     const buyerAddress = await getBuyerAddress();
     const { v, r, s } = await buildVRS(buyerAddress, value);
 
-    console.log(buyer);
+    const adminRole = await paymentToken.DEFAULT_ADMIN_ROLE();
 
-    expect(await paymentToken.nonces(buyerAddress)).to.equal(0);
+    if (mode != 1) {
+      await token.grantRole(adminRole, minter.address);
+    }
+
 
     const receiptSale = await minter.startSale();
 
-    const receiptMint = await minter.connect(buyer).mint(amount, maxDeadline.toString(), v, r, s);
+    expect(await paymentToken.nonces(buyerAddress)).to.equal(0);
 
-    // expect(await paymentToken.nonces(buyer)).to.equal(1);
+    if (mode == 1) {
+      await expect(minter.connect(buyer).mint(
+                            amount.toString(),
+                            maxDeadline.toString(),
+                            v, r, s)).to.be.revertedWith("LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS");
+    } else {
 
+      expect(await paymentToken.balanceOf(minter.address)).to.be.equal(0);
+
+      await expect(minter.connect(buyer).mint(amount.toString(), maxDeadline.toString(), v, r, s))
+        .to.emit(token, "TransferSingle")
+        .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
+        .to.emit(paymentToken, "Transfer")
+        .withArgs(buyerAddress, minter.address, value)
+
+      expect(await paymentToken.nonces(buyerAddress)).to.equal(1);
+
+      expect(await paymentToken.balanceOf(minter.address)).to.be.equal(value);
+
+      await rescueRevert(value);
+      await rescueOk(value);
+    }
+  };
+
+  async function rescueOk(value) {
+
+    const [_, __, rescue] = await hre.ethers.getSigners();
+    const rescueAddress = await rescue.getAddress()
+
+    const admin = await getAdmin()
+    const adminAddress = await admin.getAddress()
+
+
+    const rescueRole = await minter.RESCUER_ROLE();
+    await minter.grantRole(rescueRole, rescueAddress);
+
+    expect(await paymentToken.balanceOf(rescueAddress)).to.be.equal(0);
+
+    await expect(minter.connect(rescue).rescueERC20(paymentToken.address, rescueAddress, value))
+      .to.emit(paymentToken, "Transfer")
+      .withArgs(minter.address, rescueAddress, value)
+
+    expect(await paymentToken.balanceOf(rescueAddress)).to.be.equal(value);
+  }
+
+  async function rescueRevert(value) {
+    const admin = await getAdmin();
+    const adminAddress = await admin.getAddress();
+    await expect(minter.connect(admin).rescueERC20(paymentToken.address, adminAddress, value))
+      .to.be.revertedWith("LempiverseNftEggMinter: INSUFFICIENT_PERMISSIONS");
+  }
+
+
+  it('Should revert on LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS', async function () {
+    await mintOrNotToMint(1);
   });
 
-      // context('with minted tokens', function () {
-      //   beforeEach(async function () {
-      //     (this.receipt = await this.minter.mint(tokenHolder, tokenId, mintAmount, data, { from: operator }));
-      //   });
 
-      //   it('emits a TransferSingle event', function () {
-      //     expectEvent(this.receipt, 'TransferSingle', {
-      //       operator,
-      //       from: ZERO_ADDRESS,
-      //       to: tokenHolder,
-      //       id: tokenId,
-      //       value: mintAmount,
-      //     });
-      //   });
-
-      //   it('credits the minted amount of tokens', async function () {
-      //     expect(await this.token.balanceOf(tokenHolder, tokenId)).to.be.bignumber.equal(mintAmount);
-      //   });
-
-
-      // });
+  it('accepts owner signature', async function () {
+    await mintOrNotToMint(0);
+  });
 
 });
 
