@@ -38,7 +38,6 @@ describe('Minter', function () {
   const key1 = Uint8Array.from(Buffer.from(privKey1, "hex"));
 
   const price = 10;
-  const nonce = 0;
   const maxDeadline = MAX_UINT256;
 
 
@@ -91,15 +90,15 @@ describe('Minter', function () {
   }
 
 
-  const buildData = (salt, verifyingContract, owner, spender, value, deadline = maxDeadline) => ({
+  const buildData = (salt, verifyingContract, owner, spender, value, nonce, deadline = maxDeadline) => ({
     primaryType: 'Permit',
     types: { EIP712Domain, Permit },
     domain: { name, version, verifyingContract, salt },
     message: { owner, spender, value, nonce, deadline },
   });
 
-  async function buildVRS (buyer, value) {
-    const data = buildData(encodeIntAsByte32(chainId), paymentToken.address, buyer, minter.address, value);
+  async function buildVRS (buyer, value, nonce) {
+    const data = buildData(encodeIntAsByte32(chainId), paymentToken.address, buyer, minter.address, value, nonce);
     const signature = ethSigUtil.signTypedMessage(key1, { data });
     return fromRpcSig(signature);
   };
@@ -108,7 +107,7 @@ describe('Minter', function () {
 
   it('Should revert with sale is inactive', async function () {
 
-    const { v, r, s } = await buildVRS(await getBuyerAddress(), 1);
+    const { v, r, s } = await buildVRS(await getBuyerAddress(), 1, 0);
 
     await expect(minter.mint(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
@@ -135,12 +134,12 @@ describe('Minter', function () {
   });
 
 
-  async function mintOrNotToMint(mode, amount) {
+  async function mintOrNotToMint(mode, amount, initRescueUsd, initNonce=0) {
     const value = amount * price;
 
     const buyer = await getBuyer();
     const buyerAddress = await getBuyerAddress();
-    const { v, r, s } = await buildVRS(buyerAddress, value);
+    const { v, r, s } = await buildVRS(buyerAddress, value, initNonce);
 
     const adminRole = await paymentToken.DEFAULT_ADMIN_ROLE();
 
@@ -151,7 +150,7 @@ describe('Minter', function () {
 
     const receiptSale = await minter.startSale();
 
-    expect(await paymentToken.nonces(buyerAddress)).to.equal(0);
+    expect(await paymentToken.nonces(buyerAddress)).to.equal(initNonce);
 
     if (mode == 1) {
       await expect(minter.connect(buyer).mint(
@@ -168,16 +167,16 @@ describe('Minter', function () {
         .to.emit(paymentToken, "Transfer")
         .withArgs(buyerAddress, minter.address, value)
 
-      expect(await paymentToken.nonces(buyerAddress)).to.equal(1);
+      expect(await paymentToken.nonces(buyerAddress)).to.equal(initNonce+1);
 
       expect(await paymentToken.balanceOf(minter.address)).to.be.equal(value);
 
       await rescueRevert(value);
-      await rescueOk(value);
+      await rescueOk(value, initRescueUsd);
     }
   };
 
-  async function rescueOk(value) {
+  async function rescueOk(value, initRescueUsd) {
 
     const [_, __, rescue] = await hre.ethers.getSigners();
     const rescueAddress = await rescue.getAddress()
@@ -189,13 +188,13 @@ describe('Minter', function () {
     const rescueRole = await minter.RESCUER_ROLE();
     await minter.grantRole(rescueRole, rescueAddress);
 
-    expect(await paymentToken.balanceOf(rescueAddress)).to.be.equal(0);
+    expect(await paymentToken.balanceOf(rescueAddress)).to.be.equal(initRescueUsd);
 
     await expect(minter.connect(rescue).rescueERC20(paymentToken.address, rescueAddress, value))
       .to.emit(paymentToken, "Transfer")
       .withArgs(minter.address, rescueAddress, value)
 
-    expect(await paymentToken.balanceOf(rescueAddress)).to.be.equal(value);
+    expect(await paymentToken.balanceOf(rescueAddress)).to.be.equal(value+initRescueUsd);
   }
 
   async function rescueRevert(value) {
@@ -207,16 +206,22 @@ describe('Minter', function () {
 
 
   it('Should revert on LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS', async function () {
-    await mintOrNotToMint(1, 1);
+    await mintOrNotToMint(1, 1, 0);
   });
 
 
-  it('accepts owner signature', async function () {
-    await mintOrNotToMint(0, 1);
+  it('mint with signature', async function () {
+    await mintOrNotToMint(0, 1, 0);
   });
 
-  it('accepts owner signature several amount', async function () {
-    await mintOrNotToMint(0, 10);
+  it('mint with signature several amount', async function () {
+    await mintOrNotToMint(0, 10, 0);
+  });
+
+  it('mint with signature several times', async function () {
+    await mintOrNotToMint(0, 10, 0, 0);
+    await mintOrNotToMint(0, 12, 100, 1);
+    await mintOrNotToMint(0, 1, 120+100, 2);
   });
 
 });
