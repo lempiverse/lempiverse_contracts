@@ -1,6 +1,7 @@
 require('dotenv').config();
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const ALCHEMY_MAINNET_KEY = process.env.ALCHEMY_MAINNET_KEY;
+const ALCHEMY_MUMBAI_KEY = process.env.ALCHEMY_MUMBAI_KEY;
 
 require("@nomiclabs/hardhat-truffle5");
 require("@nomicfoundation/hardhat-toolbox");
@@ -11,10 +12,16 @@ module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
+      accounts: [{privateKey:"ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", balance:"10000000000000000000000"},
+                 {privateKey:"59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", balance:"10000000000000000000000"},
+                 {privateKey:"5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", balance:"10000000000000000000000"},
+                 {privateKey:"7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6", balance:"10000000000000000000000"},
+                 {privateKey:"47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a", balance:"10000000000000000000000"}]
+
     },
     mumbai: {
       gasLimit: 60000000000,
-      url: "https://rpc-mumbai.maticvigil.com",
+      url: "https://polygon-mumbai.g.alchemy.com/v2/"+ALCHEMY_MUMBAI_KEY,
       accounts: [PRIVATE_KEY]
     },
     matic: {
@@ -29,7 +36,7 @@ module.exports = {
       accounts: [PRIVATE_KEY]
     },
     mainnet: {
-      gasPrice: 17_000_000_000,
+      gasPrice: 21_000_000_000,
       gasLimit: 60000000000,
       url: "https://eth-mainnet.g.alchemy.com/v2/"+ALCHEMY_MAINNET_KEY,
       accounts: [PRIVATE_KEY]

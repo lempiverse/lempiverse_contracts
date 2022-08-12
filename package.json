@@ -10,6 +10,8 @@
     "@openzeppelin/contracts": "^4.7.2",
     "@openzeppelin/test-helpers": "^0.5.15",
     "chai": "^4.3.6",
-    "dotenv": "^16.0.1"
+    "dotenv": "^16.0.1",
+    "eth-sig-util": "^3.0.1",
+    "ethereumjs-wallet": "^1.0.2"
   }
 }
