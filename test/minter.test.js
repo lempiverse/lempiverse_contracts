@@ -109,8 +109,9 @@ describe('Minter', function () {
 
     const { v, r, s } = await buildVRS(await getBuyerAddress(), 1, 0);
 
-    await expect(minter.mint(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
+    await expect(minter.buy(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
+
 
   it('Should revert on no permission for start/stop sale', async function () {
 
@@ -148,12 +149,10 @@ describe('Minter', function () {
     }
 
 
-    const receiptSale = await minter.startSale();
-
     expect(await paymentToken.nonces(buyerAddress)).to.equal(initNonce);
 
     if (mode == 1) {
-      await expect(minter.connect(buyer).mint(
+      await expect(minter.connect(buyer).buy(
                             amount.toString(),
                             maxDeadline.toString(),
                             v, r, s)).to.be.revertedWith("LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS");
@@ -161,7 +160,7 @@ describe('Minter', function () {
 
       expect(await paymentToken.balanceOf(minter.address)).to.be.equal(0);
 
-      await expect(minter.connect(buyer).mint(amount.toString(), maxDeadline.toString(), v, r, s))
+      await expect(minter.connect(buyer).buy(amount.toString(), maxDeadline.toString(), v, r, s))
         .to.emit(token, "TransferSingle")
         .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
         .to.emit(paymentToken, "Transfer")
@@ -205,24 +204,47 @@ describe('Minter', function () {
   }
 
 
-  it('Should revert on LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS', async function () {
+  it('Should revert with LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS', async function () {
+    await minter.startSale();
     await mintOrNotToMint(1, 1, 0);
   });
 
 
   it('mint with signature', async function () {
+    await minter.startSale();
     await mintOrNotToMint(0, 1, 0);
   });
 
   it('mint with signature several amount', async function () {
+    await minter.startSale();
     await mintOrNotToMint(0, 10, 0);
   });
 
   it('mint with signature several times', async function () {
-    await mintOrNotToMint(0, 10, 0, 0);
-    await mintOrNotToMint(0, 12, 100, 1);
-    await mintOrNotToMint(0, 1, 120+100, 2);
+    await minter.startSale();
+    await mintOrNotToMint(0, 2, 0, 0);
+    await mintOrNotToMint(0, 3, 20, 1);
+    await mintOrNotToMint(0, 1, 20+30, 2);
   });
+
+  it('Should revert with limit exceed', async function () {
+    await minter.startSale();
+    await mintOrNotToMint(0, 5, 0, 0);
+    await expect(mintOrNotToMint(0, 6, 50, 1))
+      .to.be.revertedWith("limit exceed");
+  });
+
+  it('Should revert after sale with sale is inactive', async function () {
+
+    await minter.startSale();
+    await mintOrNotToMint(0, 5, 0, 0);
+
+    await minter.stopSale();
+
+    await expect(mintOrNotToMint(0, 1, 50, 1))
+      .to.be.revertedWith("sale is inactive");
+  });
+
 
 });
 

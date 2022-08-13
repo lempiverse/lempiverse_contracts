@@ -138,7 +138,7 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
         mintLimit = newMintLimit;
     }
 
-    function mint(
+    function buy(
         uint256 qty,
         uint256 deadline,
         uint8 v,
@@ -149,13 +149,13 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
         require (saleState == SaleState.OPEN, "sale is inactive");
         require (tokenIdToMint != 0, "tokenId is not set");
         require (qty > 0, "wrong qty");
-        require (mintLimit > 0, "limit exceed");
+        require (mintLimit >= qty, "limit exceed");
 
         _spendERC20(qty, deadline, v, r, s);
 
         IMintable(ierc1155Token).mint(_msgSender(), tokenIdToMint, qty, bytes(""));
 
-        mintLimit--;
+        mintLimit -= qty;
     }
 
 }
