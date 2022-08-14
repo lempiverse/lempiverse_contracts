@@ -1,7 +1,4 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
-const { fromRpcSig } = require('ethereumjs-util');
-const ethSigUtil = require('eth-sig-util');
-const Wallet = require('ethereumjs-wallet').default;
 const { expect } = require('chai');
 
 
@@ -9,8 +6,7 @@ const hre = require("hardhat");
 
 const { MAX_UINT256, ZERO_ADDRESS, ZERO_BYTES32 } = constants;
 
-const { EIP712Domain, Permit, domainSeparator } = require('./eip712');
-
+const { calcPermitVRS, encodeIntAsByte32, domainSeparator } = require('./eip712');
 
 
 
@@ -28,7 +24,6 @@ describe('Minter', function () {
 
   const name = 'USD token';
   const symbol = 'USD';
-  const version = '1';
 
   const tokenId = "11";
   const mintLimit = 10;
@@ -79,35 +74,16 @@ describe('Minter', function () {
   });
 
 
-  function encodeIntAsByte32(digit) {
-    var array = new Array(32).fill(0);
-    var n = digit
-    for (var i = 0; i<4; i++) {
-        array[31-i] = n & 0xff
-        n >>= 8
-    }
-    return array;
-  }
-
-
-  const buildData = (salt, verifyingContract, owner, spender, value, nonce, deadline = maxDeadline) => ({
-    primaryType: 'Permit',
-    types: { EIP712Domain, Permit },
-    domain: { name, version, verifyingContract, salt },
-    message: { owner, spender, value, nonce, deadline },
-  });
-
-  async function buildVRS (buyer, value, nonce) {
-    const data = buildData(encodeIntAsByte32(chainId), paymentToken.address, buyer, minter.address, value, nonce);
-    const signature = ethSigUtil.signTypedMessage(key1, { data });
-    return fromRpcSig(signature);
-  };
-
 
 
   it('Should revert with sale is inactive', async function () {
 
-    const { v, r, s } = await buildVRS(await getBuyerAddress(), 1, 0);
+    const { v, r, s } = await calcPermitVRS(
+                                    name, key1,
+                                    await getBuyerAddress(), 
+                                    paymentToken.address, 
+                                    minter.address,
+                                    1, 0, chainId, maxDeadline);
 
     await expect(minter.buy(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
@@ -130,7 +106,7 @@ describe('Minter', function () {
 
     expect(buff.toString()).to.equal(array8.toString());
 
-    const myDs = await domainSeparator(name, version, paymentToken.address, array);
+    const myDs = await domainSeparator(name, paymentToken.address, array);
     expect(await paymentToken.DOMAIN_SEPARATOR()).to.equal(myDs);
   });
 
@@ -140,7 +116,12 @@ describe('Minter', function () {
 
     const buyer = await getBuyer();
     const buyerAddress = await getBuyerAddress();
-    const { v, r, s } = await buildVRS(buyerAddress, value, initNonce);
+    const { v, r, s } = await calcPermitVRS(
+                                      name, key1,
+                                      buyerAddress, 
+                                      paymentToken.address,
+                                      minter.address, 
+                                      value, initNonce, chainId, maxDeadline);
 
     const adminRole = await paymentToken.DEFAULT_ADMIN_ROLE();
 
