@@ -9,12 +9,12 @@ const { MAX_UINT256, ZERO_ADDRESS, ZERO_BYTES32 } = constants;
 const { calcPermitVRS, encodeIntAsByte32, domainSeparator } = require('./eip712');
 
 
-
 describe('Minter', function () {
 
   let LempiverseNftEggMinter;
   let UChildAdministrableERC20;
   let LempiverseChildMintableERC1155;
+
 
   let paymentToken;
   let minter;
@@ -34,7 +34,6 @@ describe('Minter', function () {
 
   const price = 10;
   const maxDeadline = MAX_UINT256;
-
 
   async function getBuyer() {
     const [_, buyerS] = await hre.ethers.getSigners();
@@ -74,6 +73,50 @@ describe('Minter', function () {
   });
 
 
+
+  async function metaTxMintOrNotToMint(amount, initNonce=0) {
+
+    const minterIFace = LempiverseNftEggMinter.interface;
+
+    const value = amount * price;
+
+    const buyer = await getBuyer();
+    const buyerAddress = await getBuyerAddress();
+    const { v, r, s } = await calcPermitVRS(
+                                      name, key1,
+                                      buyerAddress, 
+                                      paymentToken.address,
+                                      minter.address, 
+                                      value, initNonce, chainId, maxDeadline);
+
+    const functionSignature = await minterIFace.encodeFunctionData(
+            "buy", [amount.toString(), maxDeadline.toString(), v, r, s]);
+
+    console.log(functionSignature);
+  //   const name = await dummyERC20.name()
+  //   const chainId = await dummyERC20.getChainId()
+  //   const nonce = await dummyERC20.getNonce(user)
+  //   const sig = sigUtils.signTypedData(userPK, {
+  //     data: getTypedData({
+  //       name,
+  //       version: '1',
+  //       chainId,
+  //       verifyingContract: dummyERC20.address,
+  //       nonce: '0x' + nonce.toString(16),
+  //       from: user,
+  //       functionSignature: ethUtils.toBuffer(functionSignature)
+  //     })
+  //   })
+  //   const { r, s, v } = getSignatureParameters(sig)
+  //   const tx = await dummyERC20.executeMetaTransaction(user, functionSignature, r, s, v, { from: admin })
+  //   should.exist(tx)
+  // })
+  }
+
+  it('meta-tx', async function () {
+
+    await metaTxMintOrNotToMint(3);
+  });
 
 
   it('Should revert with sale is inactive', async function () {
@@ -225,6 +268,7 @@ describe('Minter', function () {
     await expect(mintOrNotToMint(0, 1, 50, 1))
       .to.be.revertedWith("sale is inactive");
   });
+
 
 
 });

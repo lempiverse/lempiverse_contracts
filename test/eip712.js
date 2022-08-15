@@ -16,6 +16,14 @@ const Permit = [
   { name: 'deadline', type: 'uint256' },
 ];
 
+
+const MetaTransaction = [
+  { name: 'nonce', type: 'uint256' },
+  { name: 'from', type: 'address' },
+  { name: 'functionSignature', type: 'bytes' }
+];
+
+
 const VERSION="1";
 
 async function domainSeparator (name, verifyingContract, salt) {
@@ -39,7 +47,7 @@ function encodeIntAsByte32(digit) {
 }
 
 
-const buildData = (name, version, salt, verifyingContract, owner, spender, value, nonce, deadline) => ({
+const buildPermitData = (name, version, salt, verifyingContract, owner, spender, value, nonce, deadline) => ({
   primaryType: 'Permit',
   types: { EIP712Domain, Permit },
   domain: { name, version, verifyingContract, salt },
@@ -47,7 +55,11 @@ const buildData = (name, version, salt, verifyingContract, owner, spender, value
 });
 
 async function calcPermitVRS (name, key, buyer, paymentToken, minter, value, nonce, chainId, deadline) {
-  const data = buildData(name, VERSION, encodeIntAsByte32(chainId), paymentToken, buyer, minter, value, nonce, deadline);
+  const data = buildPermitData(name, VERSION, 
+                               encodeIntAsByte32(chainId), 
+                               paymentToken, buyer, minter, 
+                               value, nonce, deadline);
+
   const signature = ethSigUtil.signTypedMessage(key, { data });
   return fromRpcSig(signature);
 };
