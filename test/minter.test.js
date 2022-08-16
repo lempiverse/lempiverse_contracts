@@ -6,7 +6,7 @@ const hre = require("hardhat");
 
 const { MAX_UINT256, ZERO_ADDRESS, ZERO_BYTES32 } = constants;
 
-const { calcPermitVRS, encodeIntAsByte32, domainSeparator } = require('./eip712');
+const { calcMetaTxVRS, calcPermitVRS, encodeIntAsByte32, domainSeparator } = require('./eip712');
 
 
 describe('Minter', function () {
@@ -22,11 +22,13 @@ describe('Minter', function () {
 
   let chainId;
 
-  const name = 'USD token';
-  const symbol = 'USD';
+  const paymentTokenName = 'USD token';
+  const paymentTokenSymbol = 'USD';
 
   const tokenId = "11";
   const mintLimit = 10;
+
+  let adminRole;
 
 
   const privKey1 = "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
@@ -63,70 +65,74 @@ describe('Minter', function () {
     minter = await LempiverseNftEggMinter.deploy();
     token = await LempiverseChildMintableERC1155.deploy('0x0000000000000000000000000000000000000000');
 
-    await paymentToken.initialize(name, symbol, 6);
+    await paymentToken.initialize(paymentTokenName, paymentTokenSymbol, 6);
     await paymentToken.mint(buyer, 10000 * 1e6);
 
     chainId = parseInt(await paymentToken.getChainId());
 
     await minter.setup(paymentToken.address, token.address, price, tokenId, mintLimit);
 
+    adminRole = await paymentToken.DEFAULT_ADMIN_ROLE();
+
   });
 
 
 
-  async function metaTxMintOrNotToMint(amount, initNonce=0) {
+  async function metaTxMint(amount, initNonce=0) {
 
     const minterIFace = LempiverseNftEggMinter.interface;
 
     const value = amount * price;
 
+    const minterName = "LempiverseNftEggMinter";
+
     const buyer = await getBuyer();
     const buyerAddress = await getBuyerAddress();
-    const { v, r, s } = await calcPermitVRS(
-                                      name, key1,
-                                      buyerAddress, 
-                                      paymentToken.address,
-                                      minter.address, 
-                                      value, initNonce, chainId, maxDeadline);
+    const { v, r, s } = calcPermitVRS(
+                                  paymentTokenName, key1,
+                                  buyerAddress,
+                                  paymentToken.address,
+                                  minter.address,
+                                  value, initNonce, chainId, maxDeadline);
 
     const functionSignature = await minterIFace.encodeFunctionData(
             "buy", [amount.toString(), maxDeadline.toString(), v, r, s]);
 
-    console.log(functionSignature);
-  //   const name = await dummyERC20.name()
-  //   const chainId = await dummyERC20.getChainId()
-  //   const nonce = await dummyERC20.getNonce(user)
-  //   const sig = sigUtils.signTypedData(userPK, {
-  //     data: getTypedData({
-  //       name,
-  //       version: '1',
-  //       chainId,
-  //       verifyingContract: dummyERC20.address,
-  //       nonce: '0x' + nonce.toString(16),
-  //       from: user,
-  //       functionSignature: ethUtils.toBuffer(functionSignature)
-  //     })
-  //   })
-  //   const { r, s, v } = getSignatureParameters(sig)
-  //   const tx = await dummyERC20.executeMetaTransaction(user, functionSignature, r, s, v, { from: admin })
-  //   should.exist(tx)
-  // })
+    const [_, __, metaTxSender] = await hre.ethers.getSigners();
+
+
+    const user = await getBuyerAddress();
+
+    const metaSig = calcMetaTxVRS(minterName, key1, user, minter.address, functionSignature, initNonce, chainId);
+
+    expect(await paymentToken.balanceOf(minter.address)).to.be.equal(0);
+
+    await expect(minter.connect(metaTxSender).executeMetaTransaction(user, functionSignature, metaSig.r, metaSig.s, metaSig.v))
+        .to.emit(token, "TransferSingle")
+        .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
+        .to.emit(paymentToken, "Transfer")
+        .withArgs(buyerAddress, minter.address, value);
+
+    expect(await paymentToken.balanceOf(minter.address)).to.be.equal(value);
+
   }
 
-  it('meta-tx', async function () {
 
-    await metaTxMintOrNotToMint(3);
+  it('meta-tx', async function () {
+    await minter.startSale();
+    await token.grantRole(adminRole, minter.address);
+    await metaTxMint(3);
   });
 
 
   it('Should revert with sale is inactive', async function () {
 
-    const { v, r, s } = await calcPermitVRS(
-                                    name, key1,
-                                    await getBuyerAddress(), 
-                                    paymentToken.address, 
-                                    minter.address,
-                                    1, 0, chainId, maxDeadline);
+    const { v, r, s } = calcPermitVRS(
+                                paymentTokenName, key1,
+                                await getBuyerAddress(),
+                                paymentToken.address,
+                                minter.address,
+                                1, 0, chainId, maxDeadline);
 
     await expect(minter.buy(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
@@ -149,7 +155,7 @@ describe('Minter', function () {
 
     expect(buff.toString()).to.equal(array8.toString());
 
-    const myDs = await domainSeparator(name, paymentToken.address, array);
+    const myDs = domainSeparator(paymentTokenName, paymentToken.address, array);
     expect(await paymentToken.DOMAIN_SEPARATOR()).to.equal(myDs);
   });
 
@@ -159,14 +165,13 @@ describe('Minter', function () {
 
     const buyer = await getBuyer();
     const buyerAddress = await getBuyerAddress();
-    const { v, r, s } = await calcPermitVRS(
-                                      name, key1,
-                                      buyerAddress, 
-                                      paymentToken.address,
-                                      minter.address, 
-                                      value, initNonce, chainId, maxDeadline);
+    const { v, r, s } = calcPermitVRS(
+                                paymentTokenName, key1,
+                                buyerAddress,
+                                paymentToken.address,
+                                minter.address,
+                                value, initNonce, chainId, maxDeadline);
 
-    const adminRole = await paymentToken.DEFAULT_ADMIN_ROLE();
 
     if (mode != 1) {
       await token.grantRole(adminRole, minter.address);

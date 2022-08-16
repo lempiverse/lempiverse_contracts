@@ -1,5 +1,5 @@
 const ethSigUtil = require('eth-sig-util');
-const { fromRpcSig } = require('ethereumjs-util');
+const { fromRpcSig, toBuffer } = require('ethereumjs-util');
 
 const EIP712Domain = [
   { name: 'name', type: 'string' },
@@ -26,14 +26,14 @@ const MetaTransaction = [
 
 const VERSION="1";
 
-async function domainSeparator (name, verifyingContract, salt) {
-  // console.log("domainSeparator call", name, VERSION, verifyingContract, salt);
+function domainSeparator (name, verifyingContract, salt) {
   return '0x' + ethSigUtil.TypedDataUtils.hashStruct(
     'EIP712Domain',
     { name, version:VERSION, verifyingContract, salt },
     { EIP712Domain },
   ).toString('hex');
 }
+
 
 
 function encodeIntAsByte32(digit) {
@@ -54,7 +54,7 @@ const buildPermitData = (name, version, salt, verifyingContract, owner, spender,
   message: { owner, spender, value, nonce, deadline },
 });
 
-async function calcPermitVRS (name, key, buyer, paymentToken, minter, value, nonce, chainId, deadline) {
+function calcPermitVRS (name, key, buyer, paymentToken, minter, value, nonce, chainId, deadline) {
   const data = buildPermitData(name, VERSION, 
                                encodeIntAsByte32(chainId), 
                                paymentToken, buyer, minter, 
@@ -65,7 +65,23 @@ async function calcPermitVRS (name, key, buyer, paymentToken, minter, value, non
 };
 
 
+
+function calcMetaTxVRS (name, key, from, minter, functionSignature, nonce, chainId) {
+
+  const data = {
+    primaryType: 'MetaTransaction',
+    types: { EIP712Domain, MetaTransaction },
+    domain: { name, version:VERSION, verifyingContract:minter, salt:encodeIntAsByte32(chainId) },
+    message: { nonce, from, functionSignature },
+  };
+
+  const signature = ethSigUtil.signTypedMessage(key, { data });
+  return fromRpcSig(signature);
+};
+
+
 module.exports = {
+  calcMetaTxVRS,
   calcPermitVRS,
   encodeIntAsByte32,
   EIP712Domain,
