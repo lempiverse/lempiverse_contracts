@@ -78,7 +78,7 @@ describe('Minter', function () {
 
 
 
-  async function metaTxMint(amount, initNonce=0) {
+  async function metaTxMint(amount, initNonce) {
 
     const minterIFace = LempiverseNftEggMinter.interface;
 
@@ -100,11 +100,12 @@ describe('Minter', function () {
 
     const [_, __, metaTxSender] = await hre.ethers.getSigners();
 
+    const nonceMetaTx = await minter.getNonce(buyerAddress);
+    const metaSig = calcMetaTxVRS(minterName, key1, buyerAddress, minter.address, functionSignature, nonceMetaTx.toString(), chainId);
 
-    const metaSig = calcMetaTxVRS(minterName, key1, buyerAddress, minter.address, functionSignature, initNonce, chainId);
 
-    expect(await paymentToken.balanceOf(minter.address)).to.be.equal(0);
-    expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(0);
+    const initNftBal = await token.balanceOf(buyerAddress, tokenId);
+    const initMinterBalance = await paymentToken.balanceOf(minter.address);
 
     await expect(minter.connect(metaTxSender).executeMetaTransaction(buyerAddress, functionSignature, metaSig.r, metaSig.s, metaSig.v))
         .to.emit(token, "TransferSingle")
@@ -112,15 +113,23 @@ describe('Minter', function () {
         .to.emit(paymentToken, "Transfer")
         .withArgs(buyerAddress, minter.address, value);
 
-    expect(await paymentToken.balanceOf(minter.address)).to.be.equal(value);
-    expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(amount);
+    expect(await paymentToken.balanceOf(minter.address)).to.be.equal(parseInt(initMinterBalance) + parseInt(value));
+    expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(parseInt(initNftBal) + parseInt(amount));
   }
 
 
   it('meta-tx', async function () {
     await minter.startSale();
     await token.grantRole(adminRole, minter.address);
-    await metaTxMint(3);
+    await metaTxMint(3, 0);
+  });
+
+  it('meta-tx several times', async function () {
+    await minter.startSale();
+    await token.grantRole(adminRole, minter.address);
+    await metaTxMint(3, 0);
+    await metaTxMint(1, 1);
+    await metaTxMint(5, 2);
   });
 
 
