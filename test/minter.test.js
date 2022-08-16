@@ -101,20 +101,19 @@ describe('Minter', function () {
     const [_, __, metaTxSender] = await hre.ethers.getSigners();
 
 
-    const user = await getBuyerAddress();
-
-    const metaSig = calcMetaTxVRS(minterName, key1, user, minter.address, functionSignature, initNonce, chainId);
+    const metaSig = calcMetaTxVRS(minterName, key1, buyerAddress, minter.address, functionSignature, initNonce, chainId);
 
     expect(await paymentToken.balanceOf(minter.address)).to.be.equal(0);
+    expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(0);
 
-    await expect(minter.connect(metaTxSender).executeMetaTransaction(user, functionSignature, metaSig.r, metaSig.s, metaSig.v))
+    await expect(minter.connect(metaTxSender).executeMetaTransaction(buyerAddress, functionSignature, metaSig.r, metaSig.s, metaSig.v))
         .to.emit(token, "TransferSingle")
         .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
         .to.emit(paymentToken, "Transfer")
         .withArgs(buyerAddress, minter.address, value);
 
     expect(await paymentToken.balanceOf(minter.address)).to.be.equal(value);
-
+    expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(amount);
   }
 
 
@@ -189,6 +188,8 @@ describe('Minter', function () {
 
       expect(await paymentToken.balanceOf(minter.address)).to.be.equal(0);
 
+      const initNftBal = await token.balanceOf(buyerAddress, tokenId);
+
       await expect(minter.connect(buyer).buy(amount.toString(), maxDeadline.toString(), v, r, s))
         .to.emit(token, "TransferSingle")
         .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
@@ -198,6 +199,8 @@ describe('Minter', function () {
       expect(await paymentToken.nonces(buyerAddress)).to.equal(initNonce+1);
 
       expect(await paymentToken.balanceOf(minter.address)).to.be.equal(value);
+
+      expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(parseInt(initNftBal) + parseInt(amount));
 
       await rescueRevert(value);
       await rescueOk(value, initRescueUsd);
