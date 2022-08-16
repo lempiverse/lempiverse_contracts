@@ -21,11 +21,13 @@ async function main() {
 
     137: {'name':'LempiverseChildMintableERC1155',
           'address':'0x08bbe53cd50B8F03296E59b7FD4AEA325546921a',
-          'metataddress':'0x207Fa8Df3a17D96Ca7EA4f2893fcdCb78a304101'},
+          'metataddress':'0x207Fa8Df3a17D96Ca7EA4f2893fcdCb78a304101',
+          'minter':'0x0000000000000000000000000000000000000000'},
 
     80001: {'name':'LempiverseChildMintableERC1155',
             'address':'0x8509275bF7aAa781cf2946fB53e11568499899f1',
-            'metataddress':'0x53d791f18155C211FF8b58671d0f7E9b50E596ad'}
+            'metataddress':'0x53d791f18155C211FF8b58671d0f7E9b50E596ad',
+            'minter':'0x82047b8eA7d1620Fe47FAA28aea718bD00b70231'},
   };
 
   console.log(cmap[chainId].name, cmap[chainId].address);
@@ -38,10 +40,25 @@ async function main() {
     process.exit(-1);
   }
 
+  const minterFactory = await hre.ethers.getContractFactory("LempiverseNftEggMinter");
+  const minterContract = minterFactory.attach(cmap[chainId].minter);
+
 
   var tx, r;
 
   const data = hre.ethers.utils.arrayify("0x00");
+
+
+  tx = await contract.functions.grantRole("0x0000000000000000000000000000000000000000000000000000000000000000", cmap[chainId].minter);
+  console.log(tx['hash']);
+  r = await tx.wait();
+  console.log(r);
+
+  tx = await minterContract.functions.startSale();
+  console.log(tx['hash']);
+  r = await tx.wait();
+  console.log(r)
+
 
   // if (cmap[chainId].metataddress != "") {
   //   tx = await contract.functions.setupMetaTransactionOperator(cmap[chainId].metataddress);
@@ -51,13 +68,12 @@ async function main() {
   // }
 
 
-  // tx = await contract.functions.mint(owner.address, TOKEN_ID, 1000, data);
+  // tx = await contract.functions.mint(owner.address, TOKEN_ID, 200, data);
   // console.log(tx['hash']);
   // r = await tx.wait();
   // console.log(r);
 
-
-  // tx = await contract.functions.safeTransferFrom(owner.address, "0x987C483F51296156203a7696c939f7eeFf04A894", TOKEN_ID, 100, data);
+  // tx = await contract.functions.safeTransferFrom(owner.address, "0x987C483F51296156203a7696c939f7eeFf04A894", TOKEN_ID, 200, data);
   // console.log(tx['hash']);
   // r = await tx.wait();
   // console.log(r);
@@ -68,10 +84,10 @@ async function main() {
   // r = await tx.wait();
   // console.log(r);
 
-  tx = await contract.functions.setURI(TOKEN_ID, "bafkreig6dpfqrv3p4klu63qhpa5lgf443k6fqmcw6xjhrc2worep7anbce");
-  console.log(tx['hash']);
-  r = await tx.wait();
-  console.log(r);
+  // tx = await contract.functions.setURI(TOKEN_ID, "bafkreig6dpfqrv3p4klu63qhpa5lgf443k6fqmcw6xjhrc2worep7anbce");
+  // console.log(tx['hash']);
+  // r = await tx.wait();
+  // console.log(r);
 
   // tx = await contract.functions.setDefaultRoyalty(owner.address, 500);
   // console.log(tx['hash']);

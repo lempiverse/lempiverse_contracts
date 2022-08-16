@@ -33,7 +33,6 @@ abstract contract LempiverseNftMinter is
 
     bytes32 public constant RESCUER_ROLE = keccak256("RESCUER_ROLE");
 
-    address public metaTransactionOperator;
     address public paymentToken;
     address public ierc1155Token;
     uint256 public price;
@@ -88,10 +87,6 @@ abstract contract LempiverseNftMinter is
           uint balAfter = IERC20(paymentToken).balanceOf(address(this));
           require (balAfter - balBefore == amount, "failed to recieve payment token");
         }
-    }
-
-    function setupMetaTransactionOperator(address newMetaTransactionOperator) external only(DEFAULT_ADMIN_ROLE) {
-        metaTransactionOperator = newMetaTransactionOperator;
     }
 
     function stopSale() external only(DEFAULT_ADMIN_ROLE) {
