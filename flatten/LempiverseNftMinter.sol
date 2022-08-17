@@ -1532,7 +1532,7 @@ abstract contract LempiverseNftMinter is
     }
 
 
-    function _spendERC20(
+    function _spendERC20Permit(
         uint256 qty,
         uint256 deadline,
         uint8 v,
@@ -1550,13 +1550,19 @@ abstract contract LempiverseNftMinter is
             deadline,
             v, r, s);
 
-        {
-          uint balBefore = IERC20(paymentToken).balanceOf(address(this));
-          IERC20(paymentToken).safeTransferFrom(_msgSender(), address(this), amount);
-          uint balAfter = IERC20(paymentToken).balanceOf(address(this));
-          require (balAfter - balBefore == amount, "failed to recieve payment token");
-        }
+        _spendERC20(qty);
     }
+
+    function _spendERC20(uint256 qty) internal {
+
+        uint amount = price * qty;
+
+        uint balBefore = IERC20(paymentToken).balanceOf(address(this));
+        IERC20(paymentToken).safeTransferFrom(_msgSender(), address(this), amount);
+        uint balAfter = IERC20(paymentToken).balanceOf(address(this));
+        require (balAfter - balBefore == amount, "failed to recieve payment token");
+    }
+
 
     function stopSale() external only(DEFAULT_ADMIN_ROLE) {
         saleState = SaleState.CLOSED;
@@ -1602,7 +1608,7 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
         mintLimit = newMintLimit;
     }
 
-    function buy(
+    function buyPermit(
         uint256 qty,
         uint256 deadline,
         uint8 v,
@@ -1615,11 +1621,24 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
         require (qty > 0, "wrong qty");
         require (mintLimit >= qty, "limit exceed");
 
-        _spendERC20(qty, deadline, v, r, s);
+        _spendERC20Permit(qty, deadline, v, r, s);
 
         IMintable(ierc1155Token).mint(_msgSender(), tokenIdToMint, qty, bytes(""));
 
         mintLimit -= qty;
     }
 
+    function buy(uint256 qty) external {
+
+        require (saleState == SaleState.OPEN, "sale is inactive");
+        require (tokenIdToMint != 0, "tokenId is not set");
+        require (qty > 0, "wrong qty");
+        require (mintLimit >= qty, "limit exceed");
+
+        _spendERC20(qty);
+
+        IMintable(ierc1155Token).mint(_msgSender(), tokenIdToMint, qty, bytes(""));
+
+        mintLimit -= qty;
+    }
 }
