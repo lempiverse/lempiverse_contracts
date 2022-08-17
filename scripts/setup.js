@@ -27,7 +27,7 @@ async function main() {
     80001: {'name':'LempiverseChildMintableERC1155',
             'address':'0x8509275bF7aAa781cf2946fB53e11568499899f1',
             'metataddress':'0x53d791f18155C211FF8b58671d0f7E9b50E596ad',
-            'minter':'0x82047b8eA7d1620Fe47FAA28aea718bD00b70231'},
+            'minter':'0xF1e40835f138609f64af2D5f9B81e7b48961b2eb'},
   };
 
   console.log(cmap[chainId].name, cmap[chainId].address);
