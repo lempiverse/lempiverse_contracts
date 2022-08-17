@@ -66,12 +66,12 @@ function calcPermitVRS (name, key, buyer, paymentToken, minter, value, nonce, ch
 
 
 
-function calcMetaTxVRS (name, key, from, minter, functionSignature, nonce, chainId) {
+function calcMetaTxVRS (name, key, from, contract, functionSignature, nonce, chainId) {
 
   const data = {
     primaryType: 'MetaTransaction',
     types: { EIP712Domain, MetaTransaction },
-    domain: { name, version:VERSION, verifyingContract:minter, salt:encodeIntAsByte32(chainId) },
+    domain: { name, version:VERSION, verifyingContract:contract, salt:encodeIntAsByte32(chainId) },
     message: { nonce, from, functionSignature },
   };
 

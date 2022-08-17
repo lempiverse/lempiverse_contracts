@@ -77,8 +77,33 @@ describe('Minter', function () {
   });
 
 
+  async function metaTxApprove() {
 
-  async function metaTxMint(amount, initNonce) {
+    const paymentTokenIFace = UChildAdministrableERC20.interface;
+
+    const minterName = "LempiverseNftEggMinter";
+
+    const buyerAddress = await getBuyerAddress();
+
+    // const nonceMetaTx = await paymentToken.getNonce(buyerAddress);
+    const nonceMetaTx = await paymentToken.nonces(buyerAddress);
+
+    const functionSignature = await paymentTokenIFace.encodeFunctionData(
+            "approve", [minter.address, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"]);
+
+
+    const metaSig = calcMetaTxVRS(paymentTokenName, key1, buyerAddress, paymentToken.address, functionSignature, nonceMetaTx.toString(), chainId);
+
+    const [_, __, metaTxSender] = await hre.ethers.getSigners();
+
+
+    await expect(paymentToken.connect(metaTxSender).executeMetaTransaction(buyerAddress, functionSignature, metaSig.r, metaSig.s, metaSig.v))
+        .to.emit(paymentToken, "Approval");
+  }
+
+
+
+  async function metaTxMint(amount, initNonce, mustFail=false) {
 
     const minterIFace = LempiverseNftEggMinter.interface;
 
@@ -88,6 +113,7 @@ describe('Minter', function () {
 
     const buyer = await getBuyer();
     const buyerAddress = await getBuyerAddress();
+
     const { v, r, s } = calcPermitVRS(
                                   paymentTokenName, key1,
                                   buyerAddress,
@@ -96,7 +122,7 @@ describe('Minter', function () {
                                   value, initNonce, chainId, maxDeadline);
 
     const functionSignature = await minterIFace.encodeFunctionData(
-            "buy", [amount.toString(), maxDeadline.toString(), v, r, s]);
+            "buy", [amount.toString()]);
 
     const [_, __, metaTxSender] = await hre.ethers.getSigners();
 
@@ -107,26 +133,41 @@ describe('Minter', function () {
     const initNftBal = await token.balanceOf(buyerAddress, tokenId);
     const initMinterBalance = await paymentToken.balanceOf(minter.address);
 
-    await expect(minter.connect(metaTxSender).executeMetaTransaction(buyerAddress, functionSignature, metaSig.r, metaSig.s, metaSig.v))
-        .to.emit(token, "TransferSingle")
-        .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
-        .to.emit(paymentToken, "Transfer")
-        .withArgs(buyerAddress, minter.address, value);
+    if (mustFail) {
+      await expect(minter.connect(metaTxSender).executeMetaTransaction(buyerAddress, functionSignature, metaSig.r, metaSig.s, metaSig.v))
+        .to.be.revertedWith("Function call not successful");
+    } else {
 
-    expect(await paymentToken.balanceOf(minter.address)).to.be.equal(parseInt(initMinterBalance) + parseInt(value));
-    expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(parseInt(initNftBal) + parseInt(amount));
+      await expect(minter.connect(metaTxSender).executeMetaTransaction(buyerAddress, functionSignature, metaSig.r, metaSig.s, metaSig.v))
+          .to.emit(token, "TransferSingle")
+          .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
+          .to.emit(paymentToken, "Transfer")
+          .withArgs(buyerAddress, minter.address, value);
+
+      expect(await paymentToken.balanceOf(minter.address)).to.be.equal(parseInt(initMinterBalance) + parseInt(value));
+      expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(parseInt(initNftBal) + parseInt(amount));
+    }
   }
 
 
   it('meta-tx', async function () {
     await minter.startSale();
     await token.grantRole(adminRole, minter.address);
+    await metaTxApprove();
     await metaTxMint(3, 0);
+  });
+
+  it('meta-tx revert w/o approve', async function () {
+    await minter.startSale();
+    await token.grantRole(adminRole, minter.address);
+
+    await metaTxMint(3, 0, true);
   });
 
   it('meta-tx several times', async function () {
     await minter.startSale();
     await token.grantRole(adminRole, minter.address);
+    await metaTxApprove();
     await metaTxMint(3, 0);
     await metaTxMint(1, 1);
     await metaTxMint(5, 2);
@@ -142,7 +183,7 @@ describe('Minter', function () {
                                 minter.address,
                                 1, 0, chainId, maxDeadline);
 
-    await expect(minter.buy(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
+    await expect(minter.buyPermit(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
 
 
@@ -189,7 +230,7 @@ describe('Minter', function () {
     expect(await paymentToken.nonces(buyerAddress)).to.equal(initNonce);
 
     if (mode == 1) {
-      await expect(minter.connect(buyer).buy(
+      await expect(minter.connect(buyer).buyPermit(
                             amount.toString(),
                             maxDeadline.toString(),
                             v, r, s)).to.be.revertedWith("LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS");
@@ -199,7 +240,7 @@ describe('Minter', function () {
 
       const initNftBal = await token.balanceOf(buyerAddress, tokenId);
 
-      await expect(minter.connect(buyer).buy(amount.toString(), maxDeadline.toString(), v, r, s))
+      await expect(minter.connect(buyer).buyPermit(amount.toString(), maxDeadline.toString(), v, r, s))
         .to.emit(token, "TransferSingle")
         .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
         .to.emit(paymentToken, "Transfer")
