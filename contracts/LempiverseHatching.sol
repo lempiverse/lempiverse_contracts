@@ -96,11 +96,11 @@ contract LempiverseHatching is
 
         _addEgg(from, id, value);
 
-    	if (eggsCounter > eggsBulkLimit) {
-    		reqRandomizer();
-    	}
+        if (eggsCounter >= eggsBulkLimit) {
+            reqRandomizer();
+        }
 
-    	return IERC1155Receiver.onERC1155BatchReceived.selector;
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
 
@@ -118,15 +118,15 @@ contract LempiverseHatching is
         require(ids.length == values.length, "length inconsistence");
 
 
-    	for (uint256 i = 0; i < ids.length; i++) {
-    		_addEgg(from, ids[i], values[i]);
-    	}
+        for (uint256 i = 0; i < ids.length; i++) {
+            _addEgg(from, ids[i], values[i]);
+        }
 
-    	if (eggsCounter > eggsBulkLimit) {
-    		reqRandomizer();
-    	}
+        if (eggsCounter >= eggsBulkLimit) {
+            reqRandomizer();
+        }
 
-    	return IERC1155Receiver.onERC1155BatchReceived.selector;
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
 }
