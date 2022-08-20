@@ -50,7 +50,7 @@ abstract contract FlatEggsArray
         if (i == topIndex) {
 
             hatchIndex = 0;
-            topIndex = 0;
+            topIndex = addIndex;
 
         } else {
             hatchIndex = i;
