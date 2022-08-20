@@ -63,6 +63,10 @@ abstract contract FlatEggsArray
         uint256 id,
         uint256 value) internal {
 
+        if (value == 0) {
+            return;
+        }
+
         require(value < eggsBulkLimit/2, "too big value to transfer");
 
         if (addIndex >= toHatchList.length) {
