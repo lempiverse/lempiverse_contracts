@@ -25,7 +25,7 @@ contract LempiverseHatching is
     using SafeERC20 for IERC20;
 
 
-    VRFCoordinatorV2Interface COORDINATOR;
+    VRFCoordinatorV2Interface vrfCoordinator;
     uint64 subscriptionId;
     address public ierc1155;
 
@@ -36,30 +36,30 @@ contract LempiverseHatching is
     uint256 public lastRequestId;
 
 
-    constructor(uint64 _subscriptionId, address _vrfCoordinator, address _ierc1155) VRFConsumerBaseV2(_vrfCoordinator) {
+    constructor(address _vrfCoordinator, address _ierc1155) VRFConsumerBaseV2(_vrfCoordinator) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
-        COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
-        subscriptionId = _subscriptionId;
+        vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
         ierc1155 = _ierc1155;
     }
 
     function setupEggsBulkLimit(uint256 value) external only(DEFAULT_ADMIN_ROLE) {
-        require(eggsBulkLimit > 0, "hatching is disabled");
 
-        //cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS/2
-        require(eggsBulkLimit < 200, "too large eggsBulkLimit");
+        //cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS
+        require(value < 200, "too large eggsBulkLimit");
         eggsBulkLimit = value;
     }
 
     function setupVRF(
                 uint32 _callbackGasLimit,
                 uint16 _requestConfirmations,
-                bytes32 _keyHash) external only(DEFAULT_ADMIN_ROLE) {
+                bytes32 _keyHash,
+                uint64 _subscriptionId) external only(DEFAULT_ADMIN_ROLE) {
 
         callbackGasLimit = _callbackGasLimit;
         requestConfirmations = _requestConfirmations;
         keyHash = _keyHash;
+        subscriptionId = _subscriptionId;
     }
 
 
@@ -72,7 +72,7 @@ contract LempiverseHatching is
     }
 
     function reqRandomizer() internal {
-        lastRequestId = COORDINATOR.requestRandomWords(
+        lastRequestId = vrfCoordinator.requestRandomWords(
           keyHash,
           subscriptionId,
           requestConfirmations,
@@ -91,7 +91,7 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-        require(msg.sender == ierc1155, "only specific caller allowed");
+        require(msg.sender == ierc1155, "only specific ierc1155 caller allowed");
         require(eggsBulkLimit > 0, "hatching disabled");
 
         _addEgg(from, id, value);
@@ -112,7 +112,7 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-        require(msg.sender == ierc1155, "only specific caller allowed");
+        require(msg.sender == ierc1155, "only specific ierc1155 caller allowed");
         require(eggsBulkLimit > 0, "hatching disabled");
 
         require(ids.length == values.length, "length inconsistence");
