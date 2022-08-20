@@ -8,11 +8,15 @@ import {SafeERC20, IERC20Permit} from "@openzeppelin/contracts/token/ERC20/utils
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {FlatEggsArray} from "./FlatEggsArray.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+
 
 
 
 contract LempiverseHatching is
-	FlatEggsArray,
+    VRFConsumerBaseV2,
+    FlatEggsArray,
     AccessControlMixin,
     NativeMetaTransaction,
     ContextMixin,
@@ -21,18 +25,61 @@ contract LempiverseHatching is
     using SafeERC20 for IERC20;
 
 
-    constructor() {
+    VRFCoordinatorV2Interface COORDINATOR;
+    uint64 subscriptionId;
+    address public ierc1155;
+
+    uint32 public callbackGasLimit = 2500000;
+    uint16 public requestConfirmations = 3;
+    bytes32 public keyHash;
+
+    uint256 public lastRequestId;
+
+
+    constructor(uint64 _subscriptionId, address _vrfCoordinator, address _ierc1155) VRFConsumerBaseV2(_vrfCoordinator) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+
+        COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
+        subscriptionId = _subscriptionId;
+        ierc1155 = _ierc1155;
     }
+
+    function setupEggsBulkLimit(uint256 value) external only(DEFAULT_ADMIN_ROLE) {
+        require(eggsBulkLimit > 0, "hatching is disabled");
+
+        //cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS/2
+        require(eggsBulkLimit < 200, "too large eggsBulkLimit");
+        eggsBulkLimit = value;
+    }
+
+    function setupVRF(
+                uint32 _callbackGasLimit,
+                uint16 _requestConfirmations,
+                bytes32 _keyHash) external only(DEFAULT_ADMIN_ROLE) {
+
+        callbackGasLimit = _callbackGasLimit;
+        requestConfirmations = _requestConfirmations;
+        keyHash = _keyHash;
+    }
+
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
-    	//TODO
+        //TODO
     }
 
+    function fulfillRandomWords(uint256, uint256[] memory randomWords) internal override {
+        _startHatch(randomWords);
+    }
 
     function reqRandomizer() internal {
-	    //TODO call randomizer
-	    eggsCounter = 0;
+        lastRequestId = COORDINATOR.requestRandomWords(
+          keyHash,
+          subscriptionId,
+          requestConfirmations,
+          callbackGasLimit,
+          uint32(eggsCounter)
+        );
+        eggsCounter = 0;
     }
 
 
@@ -44,7 +91,10 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-    	_addEgg(from, id, value);
+        require(msg.sender == ierc1155, "only specific caller allowed");
+        require(eggsBulkLimit > 0, "hatching disabled");
+
+        _addEgg(from, id, value);
 
     	if (eggsCounter > eggsBulkLimit) {
     		reqRandomizer();
@@ -62,7 +112,10 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-    	require(ids.length == values.length, "length inconsistence");
+        require(msg.sender == ierc1155, "only specific caller allowed");
+        require(eggsBulkLimit > 0, "hatching disabled");
+
+        require(ids.length == values.length, "length inconsistence");
 
 
     	for (uint256 i = 0; i < ids.length; i++) {

@@ -19,7 +19,6 @@ abstract contract FlatEggsArray
     uint256 public topIndex;
 
     constructor() {
-        eggsBulkLimit = 128;
     }
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal virtual;
