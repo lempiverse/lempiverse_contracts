@@ -10,16 +10,8 @@ import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Re
 
 
 
-
-
-contract LempiverseHatching is
-    AccessControlMixin,
-    NativeMetaTransaction,
-    ContextMixin,
-    IERC1155Receiver
+abstract contract FlatEggsArray
 {
-    using SafeERC20 for IERC20;
-
     struct Egg {
     	address from;
         uint256 id;
@@ -34,18 +26,13 @@ contract LempiverseHatching is
     uint256 public hatchIndex;
     uint256 public topIndex;
 
-
     constructor() {
-
-        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         eggsBulkLimit = 128;
     }
 
-    function hatchEgg(address from, uint256 id, uint256 rnd) internal {
-    	//TODO
-    }
+    function _hatchEgg(address from, uint256 id, uint256 rnd) internal virtual;
 
-    function startHatch(uint256[] memory rnds) internal {
+    function _startHatch(uint256[] memory rnds) internal {
 
 		uint256 rndIdx = 0;
 		uint256 i;
@@ -58,7 +45,7 @@ contract LempiverseHatching is
 			}
 
 	    	for (uint256 j = 0; j < egg.value; j++) {
-	    		hatchEgg(egg.from, egg.id, rnds[ rndIdx++ ]);
+	    		_hatchEgg(egg.from, egg.id, rnds[ rndIdx++ ]);
 	    	}
 	    }
 
@@ -80,12 +67,7 @@ contract LempiverseHatching is
 
     }
 
-    function reqRandomizer() internal {
-	    //TODO call randomizer
-	    eggsCounter = 0;
-    }
-
-    function addEgg(
+    function _addEgg(
         address from,
         uint256 id,
         uint256 value) internal {
@@ -106,6 +88,61 @@ contract LempiverseHatching is
     	eggsCounter += value;
     }
 
+}
+
+contract FlatEggsArrayTest is FlatEggsArray
+{
+    function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
+    	//TODO
+    }
+
+
+    function testStartHatch(uint256[] memory rnds) external {
+    	_startHatch(rnds);
+    }
+
+
+    function testResetEggsCounter() external {
+	    eggsCounter = 0;
+    }
+
+
+    function testAddEggs(
+        address from,
+        uint256 id,
+        uint256 value,
+        bytes calldata /*data*/
+    ) external
+    {
+    	_addEgg(from, id, value);
+    }
+}
+
+
+contract LempiverseHatching is
+	FlatEggsArray,
+    AccessControlMixin,
+    NativeMetaTransaction,
+    ContextMixin,
+    IERC1155Receiver
+{
+    using SafeERC20 for IERC20;
+
+
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+    }
+
+    function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
+    	//TODO
+    }
+
+
+    function reqRandomizer() internal {
+	    //TODO call randomizer
+	    eggsCounter = 0;
+    }
+
 
     function onERC1155Received(
         address /*operator*/,
@@ -115,7 +152,7 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-    	addEgg(from, id, value);
+    	_addEgg(from, id, value);
 
     	if (eggsCounter > eggsBulkLimit) {
     		reqRandomizer();
@@ -137,7 +174,7 @@ contract LempiverseHatching is
 
 
     	for (uint256 i = 0; i < ids.length; i++) {
-    		addEgg(from, ids[i], values[i]);
+    		_addEgg(from, ids[i], values[i]);
     	}
 
     	if (eggsCounter > eggsBulkLimit) {
