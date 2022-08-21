@@ -18,9 +18,15 @@ interface IERC1155Mintable is IERC1155 {
 contract HatchingCore
 {
 	error WeightsInconsistence();
+	error TokenIdsWeightsLengthInconsistence(uint256 tokenIdsLen, uint256 weightsLen);
+	error TooLargeWeight(uint256 idx, uint256 weight);
+	error TooLargeTotalWeight(uint256 idx);
 
     IERC1155Mintable public ierc1155;
-    address garbage;
+    address public garbage;
+
+    uint32 public constant MAX_WEIGHT = 1000000;
+    uint32 public constant MAX_POSITIONS = 256;
 
     struct PetWeight {
 		uint256[] tokenIds;
@@ -30,9 +36,41 @@ contract HatchingCore
 
     mapping(uint256 => PetWeight) eggsToPets;
 
-	constructor(address _ierc1155) {
+	constructor(address _ierc1155, address _garbage) {
 		ierc1155 = IERC1155Mintable(_ierc1155);
+		garbage = _garbage;
 	}
+
+	function _setupDistribution(
+		uint256 tokenId,
+		uint256[] calldata tokenIds,
+		uint32[] calldata weights) internal {
+
+		if (tokenIds.length == 0 || tokenIds.length > MAX_POSITIONS || tokenIds.length != weights.length) {
+			revert TokenIdsWeightsLengthInconsistence(tokenIds.length, weights.length);
+		}
+
+		uint256 total = 0;
+
+		for (uint256 i = 0; i < tokenIds.length; i++) {
+			if (weights[i] > MAX_WEIGHT) {
+				revert TooLargeWeight(i, weights[i]);
+			}
+
+			total += weights[i];
+
+			if (total >= type(uint32).max) {
+				revert TooLargeTotalWeight(i);
+			}
+		}
+
+		eggsToPets[tokenId] = PetWeight(tokenIds, weights, uint32(total));
+	}
+
+	function getDistribution(uint256 tokenId) external view returns (PetWeight memory) {
+		return eggsToPets[tokenId];
+	}
+
 
 	function _canHatch(uint256 id) internal view returns (bool) {
 		PetWeight memory petWeight = eggsToPets[id];

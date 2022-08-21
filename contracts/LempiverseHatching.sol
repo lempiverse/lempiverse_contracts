@@ -38,9 +38,9 @@ contract LempiverseHatching is
     bytes32 public keyHash;
 
 
-    constructor(address _vrfCoordinator, address _ierc1155)
+    constructor(address _vrfCoordinator, address _ierc1155, address _garbage)
         VRFConsumerBaseV2(_vrfCoordinator)
-        HatchingCore(_ierc1155)
+        HatchingCore(_ierc1155, _garbage)
     {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
@@ -66,6 +66,14 @@ contract LempiverseHatching is
         requestConfirmations = _requestConfirmations;
         keyHash = _keyHash;
         subscriptionId = _subscriptionId;
+    }
+
+    function setupDistribution(
+        uint256 tokenId,
+        uint256[] calldata tokenIds,
+        uint32[] calldata weights) external only(DEFAULT_ADMIN_ROLE) {
+
+        return _setupDistribution(tokenId, tokenIds, weights);
     }
 
     function canHatch(uint256 id) external view returns (bool) {
