@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import {AccessControlMixin, AccessControl} from "./AccessControlMixin.sol";
 import {NativeMetaTransaction} from "./NativeMetaTransaction.sol";
 import {ContextMixin} from "./ContextMixin.sol";
-import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {IERC165, IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {FlatEggsArray} from "./FlatEggsArray.sol";
 import {HatchingCore} from "./HatchingCore.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
@@ -89,6 +89,11 @@ contract LempiverseHatching is
           callbackGasLimit,
           uint32(numWorlds)
         );
+    }
+
+    //ERC165 support
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165,AccessControl) returns (bool) {
+        return AccessControl.supportsInterface(interfaceId) || type(IERC1155Receiver).interfaceId == interfaceId;
     }
 
 
