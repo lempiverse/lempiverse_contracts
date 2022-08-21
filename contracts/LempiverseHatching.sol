@@ -23,6 +23,13 @@ contract LempiverseHatching is
     IERC1155Receiver
 {
 
+    error OnlySpecificErc1155CallerAllowed(address sender);
+    error HatchingDisabled();
+    error CantHatchThisTokenId(uint256 tokenId);
+    error ArrayLengthsForBatchInconsistence();
+    error TooLargeEggsBulkLimit(uint256 value);
+
+
     VRFCoordinatorV2Interface vrfCoordinator;
     uint64 subscriptionId;
 
@@ -43,7 +50,9 @@ contract LempiverseHatching is
     function setupEggsBulkLimit(uint256 value) external only(DEFAULT_ADMIN_ROLE) {
 
         //cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS
-        require(value < 500, "too large eggsBulkLimit");
+        if (value >= 500) {
+            revert TooLargeEggsBulkLimit(value);
+        }
         eggsBulkLimit = value;
     }
 
@@ -91,11 +100,16 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-        require(msg.sender == address(ierc1155), "only specific ierc1155 caller allowed");
-        require(eggsBulkLimit > 0, "hatching disabled");
+        if (msg.sender != address(ierc1155)) {
+            revert OnlySpecificErc1155CallerAllowed(msg.sender);
+        }
+
+        if (eggsBulkLimit == 0) {
+            revert HatchingDisabled();
+        }
 
         if (!_canHatch(id)) {
-            return 0xbad00bad;
+            revert CantHatchThisTokenId(id);
         }
 
         if (value > 0) {
@@ -115,15 +129,23 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-        require(msg.sender == address(ierc1155), "only specific ierc1155 caller allowed");
-        require(eggsBulkLimit > 0, "hatching disabled");
+        if (msg.sender != address(ierc1155)) {
+            revert OnlySpecificErc1155CallerAllowed(msg.sender);
+        }
 
-        require(ids.length == values.length, "length inconsistence");
+        if (eggsBulkLimit == 0) {
+            revert HatchingDisabled();
+        }
+
+        if (ids.length != values.length) {
+            revert ArrayLengthsForBatchInconsistence();
+        }
+
 
 
         for (uint256 i = 0; i < ids.length; i++) {
             if (!_canHatch(ids[i])) {
-                return 0xbad00bad;
+                revert CantHatchThisTokenId(ids[i]);
             }
 
             if (values[i] == 0) {

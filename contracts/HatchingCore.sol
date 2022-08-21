@@ -15,6 +15,8 @@ interface IERC1155Mintable is IERC1155 {
 
 contract HatchingCore
 {
+	error WeightsInconsistence();
+
     IERC1155Mintable public ierc1155;
 
     struct PetWeight {
@@ -58,6 +60,6 @@ contract HatchingCore
 			}
 		}
 
-		require(false, "weights inconsistence");
+		revert WeightsInconsistence();
 	}
 }
