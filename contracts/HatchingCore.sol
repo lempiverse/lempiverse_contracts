@@ -39,13 +39,21 @@ contract HatchingCore
 	}
 
 	function _executeHatchingEgg(address from, uint256 id, uint256 rnd) internal {
+		uint256 tokenId = _makeChoice(id, rnd);
+
+		if (tokenId == 0) {
+			ierc1155.safeTransferFrom(address(this), from, id, 1, bytes("return back"));
+		} else {
+			ierc1155.mint(from, tokenId, 1, bytes(""));
+		}
+	}
+
+	function _makeChoice(uint256 id, uint256 rnd) internal view returns (uint256) {
 		PetWeight memory petWeight = eggsToPets[id];
 		assert(petWeight.tokenIds.length == petWeight.weights.length);
 
 		if (petWeight.tokenIds.length == 0) {
-
-		    ierc1155.safeTransferFrom(address(this), from, id, 1, bytes("return back"));
-			return;
+			return 0;
 		}
 
 		uint32 hit = uint32(rnd % uint256(petWeight.total));
@@ -55,8 +63,7 @@ contract HatchingCore
 			acc += petWeight.weights[i];
 
 			if (hit < acc) {
-				ierc1155.mint(from, petWeight.tokenIds[i], 1, bytes(""));
-				return;
+				return petWeight.tokenIds[i];
 			}
 		}
 
