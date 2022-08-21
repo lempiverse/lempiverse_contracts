@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
+
 interface IERC1155Mintable is IERC1155 {
     function mint(
         address to,
@@ -13,11 +14,13 @@ interface IERC1155Mintable is IERC1155 {
 }
 
 
+
 contract HatchingCore
 {
 	error WeightsInconsistence();
 
     IERC1155Mintable public ierc1155;
+    address garbage;
 
     struct PetWeight {
 		uint256[] tokenIds;
@@ -45,6 +48,7 @@ contract HatchingCore
 			ierc1155.safeTransferFrom(address(this), from, id, 1, bytes("return back"));
 		} else {
 			ierc1155.mint(from, tokenId, 1, bytes(""));
+			ierc1155.safeTransferFrom(address(this), garbage, id, 1, bytes(""));
 		}
 	}
 
