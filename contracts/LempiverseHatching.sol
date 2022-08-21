@@ -30,8 +30,6 @@ contract LempiverseHatching is
     uint16 public requestConfirmations = 3;
     bytes32 public keyHash;
 
-    uint256 public lastRequestId;
-
 
     constructor(address _vrfCoordinator, address _ierc1155)
         VRFConsumerBaseV2(_vrfCoordinator)
@@ -45,7 +43,7 @@ contract LempiverseHatching is
     function setupEggsBulkLimit(uint256 value) external only(DEFAULT_ADMIN_ROLE) {
 
         //cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS
-        require(value < 200, "too large eggsBulkLimit");
+        require(value < 500, "too large eggsBulkLimit");
         eggsBulkLimit = value;
     }
 
@@ -70,19 +68,18 @@ contract LempiverseHatching is
         _executeHatchingEgg(from, id, rnd);
     }
 
-    function fulfillRandomWords(uint256, uint256[] memory randomWords) internal override {
-        _startHatch(randomWords);
+    function fulfillRandomWords(uint256 reqId, uint256[] memory randomWords) internal override {
+        _startHatch(reqId, randomWords);
     }
 
-    function reqRandomizer() internal {
-        lastRequestId = vrfCoordinator.requestRandomWords(
+    function reqRandomizer(uint256 numWorlds) internal returns (uint256 requestId) {
+        requestId = vrfCoordinator.requestRandomWords(
           keyHash,
           subscriptionId,
           requestConfirmations,
           callbackGasLimit,
-          uint32(eggsCounter)
+          uint32(numWorlds)
         );
-        eggsCounter = 0;
     }
 
 
@@ -101,10 +98,9 @@ contract LempiverseHatching is
             return 0xbad00bad;
         }
 
-        _addEgg(from, id, value);
-
-        if (eggsCounter >= eggsBulkLimit) {
-            reqRandomizer();
+        if (value > 0) {
+            uint256 requestId = reqRandomizer(value);
+            _addEgg(requestId, from, id, value);
         }
 
         return IERC1155Receiver.onERC1155BatchReceived.selector;
@@ -130,11 +126,12 @@ contract LempiverseHatching is
                 return 0xbad00bad;
             }
 
-            _addEgg(from, ids[i], values[i]);
-        }
+            if (values[i] == 0) {
+                continue;
+            }
 
-        if (eggsCounter >= eggsBulkLimit) {
-            reqRandomizer();
+            uint256 requestId = reqRandomizer(values[i]);
+            _addEgg(requestId, from, ids[i], values[i]);
         }
 
         return IERC1155Receiver.onERC1155BatchReceived.selector;

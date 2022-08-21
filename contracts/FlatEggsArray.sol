@@ -10,77 +10,52 @@ abstract contract FlatEggsArray
         uint256 value;
     }
 
-    Egg [] public toHatchList;
-    uint256 public eggsCounter;
+    mapping (uint256 => Egg) toHatch;
     uint256 public eggsBulkLimit;
 
     uint256 public addIndex;
     uint256 public hatchIndex;
     uint256 public topIndex;
 
+    error WrongReqId(uint256 reqId);
+    error EggValueRndLengthInconsistence(uint256 eggValue, uint256 rndLength);
+    error TooBigValueToTransfer(uint256 value);
+
     constructor() {
     }
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal virtual;
 
-    function _startHatch(uint256[] memory rnds) internal {
+    function _startHatch(uint256 reqId, uint256[] memory rnds) internal {
 
-        uint256 rndIdx = 0;
-        uint256 i;
-        for (i = hatchIndex; i < topIndex; i++) {
+        Egg memory egg = toHatch[reqId];
 
-            Egg memory egg = toHatchList[i];
-
-            if (egg.value > rnds.length - rndIdx) {
-                break;
-            }
-
-            for (uint256 j = 0; j < egg.value; j++) {
-                _hatchEgg(egg.from, egg.id, rnds[ rndIdx++ ]);
-            }
+        if (egg.value == 0) {
+            revert WrongReqId(reqId);
         }
 
-        if (addIndex > i && i > eggsBulkLimit) {
-            //if there are enought space at begins of array and
-            //currently we are adding from end of array
-            //so let's start adding at begins of array
-            addIndex = 0;
+        if (egg.value != rnds.length) {
+            revert EggValueRndLengthInconsistence(egg.value, rnds.length);
         }
 
-        if (i == topIndex) {
-
-            hatchIndex = 0;
-            topIndex = addIndex;
-
-        } else {
-            hatchIndex = i;
+        for (uint256 j = 0; j < rnds.length; j++) {
+            _hatchEgg(egg.from, egg.id, rnds[j]);
         }
-
     }
 
     function _addEgg(
+        uint256 reqId,
         address from,
         uint256 id,
         uint256 value) internal {
 
-        if (value == 0) {
-            return;
+        assert (value > 0);
+
+        if (value >= eggsBulkLimit) {
+            revert TooBigValueToTransfer(value);
         }
 
-        require(value < eggsBulkLimit/2, "too big value to transfer");
-
-        if (addIndex >= toHatchList.length) {
-            toHatchList.push(Egg(from, id, value));
-            addIndex++;
-        } else {
-            toHatchList[addIndex++] = Egg(from, id, value);
-        }
-
-        if (addIndex > hatchIndex) {
-            topIndex = addIndex;
-        }
-
-        eggsCounter += value;
+        toHatch[reqId] = Egg(from, id, value);
     }
 
 }
@@ -92,24 +67,21 @@ contract FlatEggsArrayTest is FlatEggsArray
     }
 
 
-    function testStartHatch(uint256[] memory rnds) external {
-        _startHatch(rnds);
+    function testStartHatch(uint256 reqId, uint256[] memory rnds) external {
+        _startHatch(reqId, rnds);
     }
 
-
-    function testResetEggsCounter() external {
-        eggsCounter = 0;
-    }
 
 
     function testAddEggs(
+        uint256 reqId,
         address from,
         uint256 id,
         uint256 value,
         bytes calldata /*data*/
     ) external
     {
-        _addEgg(from, id, value);
+        _addEgg(reqId, from, id, value);
     }
 }
 
