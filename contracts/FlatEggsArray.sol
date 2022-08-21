@@ -60,28 +60,3 @@ abstract contract FlatEggsArray
 
 }
 
-contract FlatEggsArrayTest is FlatEggsArray
-{
-    function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
-        //TODO
-    }
-
-
-    function testStartHatch(uint256 reqId, uint256[] memory rnds) external {
-        _startHatch(reqId, rnds);
-    }
-
-
-
-    function testAddEggs(
-        uint256 reqId,
-        address from,
-        uint256 id,
-        uint256 value,
-        bytes calldata /*data*/
-    ) external
-    {
-        _addEgg(reqId, from, id, value);
-    }
-}
-
