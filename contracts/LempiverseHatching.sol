@@ -4,10 +4,9 @@ pragma solidity ^0.8.9;
 import {AccessControlMixin, AccessControl} from "./AccessControlMixin.sol";
 import {NativeMetaTransaction} from "./NativeMetaTransaction.sol";
 import {ContextMixin} from "./ContextMixin.sol";
-import {SafeERC20, IERC20Permit} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {FlatEggsArray} from "./FlatEggsArray.sol";
+import {HatchingCore} from "./HatchingCore.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
@@ -15,6 +14,7 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2
 
 
 contract LempiverseHatching is
+    HatchingCore,
     VRFConsumerBaseV2,
     FlatEggsArray,
     AccessControlMixin,
@@ -22,12 +22,9 @@ contract LempiverseHatching is
     ContextMixin,
     IERC1155Receiver
 {
-    using SafeERC20 for IERC20;
-
 
     VRFCoordinatorV2Interface vrfCoordinator;
     uint64 subscriptionId;
-    address public ierc1155;
 
     uint32 public callbackGasLimit = 2500000;
     uint16 public requestConfirmations = 3;
@@ -36,11 +33,13 @@ contract LempiverseHatching is
     uint256 public lastRequestId;
 
 
-    constructor(address _vrfCoordinator, address _ierc1155) VRFConsumerBaseV2(_vrfCoordinator) {
+    constructor(address _vrfCoordinator, address _ierc1155)
+        VRFConsumerBaseV2(_vrfCoordinator)
+        HatchingCore(_ierc1155)
+    {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
         vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
-        ierc1155 = _ierc1155;
     }
 
     function setupEggsBulkLimit(uint256 value) external only(DEFAULT_ADMIN_ROLE) {
@@ -62,9 +61,13 @@ contract LempiverseHatching is
         subscriptionId = _subscriptionId;
     }
 
+    function canHatch(uint256 id) external view returns (bool) {
+        return _canHatch(id);
+    }
+
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
-        //TODO
+        _executeHatchingEgg(from, id, rnd);
     }
 
     function fulfillRandomWords(uint256, uint256[] memory randomWords) internal override {
@@ -91,8 +94,12 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-        require(msg.sender == ierc1155, "only specific ierc1155 caller allowed");
+        require(msg.sender == address(ierc1155), "only specific ierc1155 caller allowed");
         require(eggsBulkLimit > 0, "hatching disabled");
+
+        if (!_canHatch(id)) {
+            return 0xbad00bad;
+        }
 
         _addEgg(from, id, value);
 
@@ -112,13 +119,17 @@ contract LempiverseHatching is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
-        require(msg.sender == ierc1155, "only specific ierc1155 caller allowed");
+        require(msg.sender == address(ierc1155), "only specific ierc1155 caller allowed");
         require(eggsBulkLimit > 0, "hatching disabled");
 
         require(ids.length == values.length, "length inconsistence");
 
 
         for (uint256 i = 0; i < ids.length; i++) {
+            if (!_canHatch(ids[i])) {
+                return 0xbad00bad;
+            }
+
             _addEgg(from, ids[i], values[i]);
         }
 
