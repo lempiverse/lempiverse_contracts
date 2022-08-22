@@ -271,13 +271,15 @@ describe('Hatching', function () {
     const srcIds = [1000, 2000, 3000, 4000, 5000];
     const srcWeights = [10, 0, 20, 1, 100];
 
-    console.log("please waiting for long test...");
 
     const src = srcWeights.reduce(function(result, field, index) {
       result[srcIds[index]] = field;
       return result;
     }, {})
 
+    const total = srcWeights.reduce((result, field) => result + field, 0 );
+
+    console.log("please waiting for long test...");
 
     hatchingDistribution.setupDistribution(tokenId, srcIds, srcWeights);
     expect(await hatchingDistribution.canHatch(tokenId)).to.be.equal(true);
@@ -285,7 +287,7 @@ describe('Hatching', function () {
 
     const distrib = await hatchingDistribution.getDistribution(tokenId);
 
-    var choice = await hatchingDistribution.makeChoice(tokenId, distrib.total);
+    expect(total).to.be.equal(distrib.total);
 
     var acc = {}
     for (var k in src) {
@@ -295,7 +297,7 @@ describe('Hatching', function () {
     const mult = 5;
 
     for (var i=0; i<distrib.total*mult; i++) {
-      choice = await hatchingDistribution.makeChoice(tokenId, i);
+      const choice = await hatchingDistribution.makeChoice(tokenId, i);
       acc[choice] ++;
       // console.log(i, choice.toString());
     }
