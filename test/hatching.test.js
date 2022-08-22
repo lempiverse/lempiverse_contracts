@@ -179,8 +179,11 @@ describe('Hatching', function () {
     expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
     distribIds.map(async (x) => { expect(await token.totalSupply(x)).to.be.equal(0); } )
 
+    expect(await hatching.canHatch(tokenId)).to.be.equal(true);
     if (withDisableHatch) {
       await hatching.setupDistribution(tokenId, [], []);
+
+      expect(await hatching.canHatch(tokenId)).to.be.equal(false);
     }
 
     const reqId = 1;
