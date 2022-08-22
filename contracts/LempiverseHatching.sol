@@ -130,7 +130,7 @@ contract LempiverseHatching is
             _addEgg(requestId, from, id, value);
         }
 
-        return IERC1155Receiver.onERC1155BatchReceived.selector;
+        return IERC1155Receiver.onERC1155Received.selector;
     }
 
 
