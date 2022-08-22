@@ -1,6 +1,6 @@
 const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
-
+const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 
 const hre = require("hardhat");
 
@@ -62,6 +62,20 @@ describe('Hatching', function () {
     return true
   }
 
+  const checkDistrib = async (tokenId, num, ids, weights) => {
+
+    const distrib = await hatching.getDistribution(tokenId);
+    expect(distrib.tokenIds.length).to.equal(num);
+    expect(distrib.weights.length).to.equal(num);
+
+    var total = 0;
+    for (var i=0; i<distrib.tokenIds.length; i++) {
+      expect(distrib.tokenIds[i]).to.equal(ids[i]);
+      expect(distrib.weights[i]).to.equal(weights[i]);
+      total += distrib.weights[i];
+    }
+    expect(distrib.total).to.equal(total);
+  }
 
   beforeEach(async function () {
 
@@ -99,28 +113,25 @@ describe('Hatching', function () {
   });
 
 
-  it('distribution', async function () {
 
-      const ids = [10000, 10001, 10002];
-      const weights = [1, 2, 3];
+  it('distribution setup and get', async function () {
+
+      const ids = [10000, 10001, 10002, 10003];
+      const weights = [1, 2, 3, 4];
       await hatching.setupDistribution(11111, ids, weights);
 
-      const distrib = await hatching.getDistribution(11111);
-      expect(distrib.tokenIds.length).to.equal(3);
-      expect(distrib.weights.length).to.equal(3);
 
-      var total = 0;
-      for (var i =0; i<distrib.tokenIds.length; i++) {
-        expect(distrib.tokenIds[i]).to.equal(ids[i]);
-        expect(distrib.weights[i]).to.equal(weights[i]);
-        total += distrib.weights[i];
-      }
-      expect(distrib.total).to.equal(total);
+      await checkDistrib(11111, 4, ids, weights);
+      await checkDistrib(tokenId, 3, distribIds, distribWeights);
 
+      const distrib = await hatching.getDistribution(9999);
+      expect(distrib.total).to.equal(0);
+      expect(distrib.tokenIds.length).to.equal(0);
+      expect(distrib.weights.length).to.equal(0);
   })
 
   it('base', async function () {
-    console.log(await hatching.getDistribution(tokenId));
+    // console.log(await hatching.getDistribution(tokenId));
 
     const oper = await getOperAddress();
 
@@ -150,7 +161,7 @@ describe('Hatching', function () {
     const reqId = 1;
     await expect(vrfCoordinator.fulfillRandomWordsWithOverride(reqId, hatching.address, [1]))
         .to.emit(vrfCoordinator, "RandomWordsFulfilled")
-        .withArgs(reqId, reqId, capturePayment, true)
+        .withArgs(reqId, reqId, anyValue, true)
 
     expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
     expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
