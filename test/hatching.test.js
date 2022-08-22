@@ -15,6 +15,7 @@ describe('Hatching', function () {
   let VRFCoordinatorV2Mock;
   let Garbage;
   let LempiverseChildMintableERC1155;
+  let HatchingDistributionTest;
 
 
   let garbage;
@@ -85,12 +86,15 @@ describe('Hatching', function () {
     VRFCoordinatorV2MockEx = await hre.ethers.getContractFactory('VRFCoordinatorV2MockEx');
     Garbage = await hre.ethers.getContractFactory('Garbage');
     LempiverseChildMintableERC1155 = await hre.ethers.getContractFactory('LempiverseChildMintableERC1155');
+    HatchingDistributionTest = await hre.ethers.getContractFactory('HatchingDistributionTest');
 
 
     garbage = await Garbage.deploy();
     vrfCoordinator = await VRFCoordinatorV2MockEx.deploy(1, 1);
     token = await LempiverseChildMintableERC1155.deploy('0x0000000000000000000000000000000000000000');
     hatching = await LempiverseHatching.deploy(vrfCoordinator.address, token.address, garbage.address);
+    hatchingDistribution = await HatchingDistributionTest.deploy();
+
 
     await garbage.setup(true);
 

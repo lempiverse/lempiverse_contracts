@@ -5,16 +5,26 @@ import {AccessControlMixin, AccessControl} from "./AccessControlMixin.sol";
 import {NativeMetaTransaction} from "./NativeMetaTransaction.sol";
 import {ContextMixin} from "./ContextMixin.sol";
 import {IERC165, IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {FlatEggsArray} from "./FlatEggsArray.sol";
-import {HatchingCore} from "./HatchingCore.sol";
+import {HatchingDistribution} from "./HatchingDistribution.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
 
+interface IERC1155Mintable is IERC1155 {
+    function mint(
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes memory data
+    ) external;
+}
+
 
 
 contract LempiverseHatching is
-    HatchingCore,
+    HatchingDistribution,
     VRFConsumerBaseV2,
     FlatEggsArray,
     AccessControlMixin,
@@ -29,6 +39,8 @@ contract LempiverseHatching is
     error ArrayLengthsForBatchInconsistence();
     error TooLargeEggsBulkLimit(uint256 value);
 
+    IERC1155Mintable public ierc1155;
+    address public garbage;
 
     VRFCoordinatorV2Interface vrfCoordinator;
     uint64 subscriptionId;
@@ -40,10 +52,11 @@ contract LempiverseHatching is
 
     constructor(address _vrfCoordinator, address _ierc1155, address _garbage)
         VRFConsumerBaseV2(_vrfCoordinator)
-        HatchingCore(_ierc1155, _garbage)
     {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
+        ierc1155 = IERC1155Mintable(_ierc1155);
+        garbage = _garbage;
         vrfCoordinator = VRFCoordinatorV2Interface(_vrfCoordinator);
     }
 
@@ -82,7 +95,15 @@ contract LempiverseHatching is
 
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
-        _executeHatchingEgg(from, id, rnd);
+
+        uint256 tokenId = _makeChoice(id, rnd);
+
+        if (tokenId == 0) {
+            ierc1155.safeTransferFrom(address(this), from, id, 1, bytes("return back"));
+        } else {
+            ierc1155.mint(from, tokenId, 1, bytes(""));
+            ierc1155.safeTransferFrom(address(this), garbage, id, 1, bytes(""));
+        }
     }
 
     function fulfillRandomWords(uint256 reqId, uint256[] memory randomWords) internal override {
