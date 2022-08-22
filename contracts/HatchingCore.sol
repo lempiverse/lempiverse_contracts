@@ -46,7 +46,7 @@ contract HatchingCore
 		uint256[] calldata tokenIds,
 		uint32[] calldata weights) internal {
 
-		if (tokenIds.length == 0 || tokenIds.length > MAX_POSITIONS || tokenIds.length != weights.length) {
+		if (tokenIds.length > MAX_POSITIONS || tokenIds.length != weights.length) {
 			revert TokenIdsWeightsLengthInconsistence(tokenIds.length, weights.length);
 		}
 

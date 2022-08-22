@@ -118,14 +118,34 @@ describe('Hatching', function () {
 
   it('distribution setup and get', async function () {
 
+      const newTokenId = 11111;
+      const unexistsTokenId = 99999;
       const ids = [10000, 10001, 10002, 10003];
       const weights = [1, 2, 3, 4];
-      await hatching.setupDistribution(11111, ids, weights);
+
+      expect(await hatching.canHatch(tokenId)).to.be.equal(true);
+      expect(await hatching.canHatch(newTokenId)).to.be.equal(false);
+      expect(await hatching.canHatch(unexistsTokenId)).to.be.equal(false);
+
+      await hatching.setupDistribution(newTokenId, ids, weights);
+      expect(await hatching.canHatch(newTokenId)).to.be.equal(true);
+      expect(await hatching.canHatch(tokenId)).to.be.equal(true);
+      expect(await hatching.canHatch(unexistsTokenId)).to.be.equal(false);
 
 
-      await checkDistrib(11111, ids, weights);
+      await checkDistrib(newTokenId, ids, weights);
       await checkDistrib(tokenId, distribIds, distribWeights);
-      await checkDistrib(9999, [], []);
+      await checkDistrib(unexistsTokenId, [], []);
+
+      await hatching.setupDistribution(newTokenId, [], []);
+
+      await checkDistrib(newTokenId, [], []);
+      await checkDistrib(tokenId, distribIds, distribWeights);
+      await checkDistrib(unexistsTokenId, [], []);
+
+      expect(await hatching.canHatch(newTokenId)).to.be.equal(false);
+      expect(await hatching.canHatch(tokenId)).to.be.equal(true);
+      expect(await hatching.canHatch(unexistsTokenId)).to.be.equal(false);
   })
 
 
