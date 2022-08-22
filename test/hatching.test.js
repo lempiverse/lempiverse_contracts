@@ -149,7 +149,7 @@ describe('Hatching', function () {
   })
 
 
-  async function baseFlow(rnds, pattern) {
+  async function baseFlow(rnds, pattern, withDisableHatch=false) {
     const oper = await getOperAddress();
 
     const num = rnds.length;
@@ -179,6 +179,9 @@ describe('Hatching', function () {
     expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
     distribIds.map(async (x) => { expect(await token.totalSupply(x)).to.be.equal(0); } )
 
+    if (withDisableHatch) {
+      await hatching.setupDistribution(tokenId, [], []);
+    }
 
     const reqId = 1;
 
@@ -189,24 +192,26 @@ describe('Hatching', function () {
     // console.log(await Promise.all(distribIds.map(async x => token.balanceOf(oper, x) )))
 
     const checkDistribPattern = async (f) => {
-      expect(await Promise.all(distribIds.map(async x => f(x) ))).to.deep.equal(pattern);
+      expect(await Promise.all(distribIds.map(async x => await f(x) ))).to.deep.equal(pattern);
     }
 
 
-    expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(withDisableHatch ? num : 0);
     expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
-    checkDistribPattern(async x => token.balanceOf(oper, x));
-    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(num);
+    await checkDistribPattern(async x => await token.balanceOf(oper, x));
     expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    await checkDistribPattern(async x => await token.totalSupply(x));
+    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(withDisableHatch ? 0 : num);
 
-    checkDistribPattern(async x => token.totalSupply(x));
+    if (!withDisableHatch) {
 
-    await garbage.burn(token.address, [tokenId]);
-    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
+      await garbage.burn(token.address, [tokenId]);
+      expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
 
-    expect(await token.totalSupply(tokenId)).to.be.equal(0);
+      expect(await token.totalSupply(tokenId)).to.be.equal(0);
 
-    checkDistribPattern(async x => token.totalSupply(x));
+      await checkDistribPattern(async x => await token.totalSupply(x));
+    }
   }
 
   it('base flow 1', async function () {
@@ -239,6 +244,18 @@ describe('Hatching', function () {
 
   it('base flow 5-005', async function () {
     await baseFlow([54,58,58,57,54], [0,0,5])
+  })
+
+  it('return egg back 100', async function () {
+    await baseFlow([1], [0,0,0], true)
+  })
+
+  it('return egg back 111', async function () {
+    await baseFlow([1,18,50], [0,0,0], true)
+  })
+
+  it('return egg back 131', async function () {
+    await baseFlow([1,18,18,18,50], [0,0,0], true)
   })
 
 })
