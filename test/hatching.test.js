@@ -96,8 +96,6 @@ describe('Hatching', function () {
     hatchingDistribution = await HatchingDistributionTest.deploy();
 
 
-    await garbage.setup(true);
-
     await vrfCoordinator.createSubscription();
     vrfSubId = await vrfCoordinator.getLastSubscription();
     await vrfCoordinator.fundSubscription(vrfSubId.toString(), 1000_000_000_000);
@@ -152,8 +150,99 @@ describe('Hatching', function () {
       expect(await hatching.canHatch(unexistsTokenId)).to.be.equal(false);
   })
 
+  it('Garbage no resetup true->false', async function () {
+      await garbage.setup(true);
+      await expect(garbage.setup(false))
+        .to.be.revertedWith("only once allowed");
+  })
+
+  it('Garbage no resetup false->true', async function () {
+      await garbage.setup(false);
+      await expect(garbage.setup(true))
+        .to.be.revertedWith("only once allowed");
+  })
+
+  it('Garbage not allowed transfer', async function () {
+      await garbage.setup(false);
+
+      const num = 2;
+      const oper = await getOperAddress();
+      await token.mint(oper, tokenId, num, 0x0);
+      await token.mint(oper, tokenId+1, num+1, 0x0);
+      expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+      expect(await token.balanceOf(oper, tokenId+1)).to.be.equal(num+1);
+
+      expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
+      expect(await token.balanceOf(garbage.address, tokenId+1)).to.be.equal(0);
+
+      await expect(token.connect(await getOper()).safeTransferFrom(oper, garbage.address, tokenId, num, 0x0))
+          .to.be.revertedWith("ERC1155: ERC1155Receiver rejected tokens");
+
+      await expect(token.connect(await getOper()).safeBatchTransferFrom(oper, garbage.address,
+                          [tokenId, tokenId+1], [num,num+1], 0x0))
+          .to.be.revertedWith("ERC1155: ERC1155Receiver rejected tokens");
+
+      expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+      expect(await token.balanceOf(oper, tokenId+1)).to.be.equal(num+1);
+
+      expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
+      expect(await token.balanceOf(garbage.address, tokenId+1)).to.be.equal(0);
+  })
+
+  it('Garbage allowed transfer', async function () {
+      await garbage.setup(true);
+
+      const num = 2;
+      const oper = await getOperAddress();
+      await token.mint(oper, tokenId, num, 0x0);
+      await token.mint(oper, tokenId+1, num+1, 0x0);
+      expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+      expect(await token.balanceOf(oper, tokenId+1)).to.be.equal(num+1);
+
+      expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
+      expect(await token.balanceOf(garbage.address, tokenId+1)).to.be.equal(0);
+
+      await token.connect(await getOper()).safeTransferFrom(oper, garbage.address, tokenId, num, 0x0);
+
+      expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
+      expect(await token.balanceOf(oper, tokenId+1)).to.be.equal(num+1);
+
+      expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(num);
+      expect(await token.balanceOf(garbage.address, tokenId+1)).to.be.equal(0);
+
+      expect(await token.totalSupply(tokenId)).to.be.equal(num);
+      expect(await token.totalSupply(tokenId+1)).to.be.equal(num+1);
+
+
+      await token.mint(oper, tokenId, num, 0x0);
+      expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+
+      await token.connect(await getOper()).safeBatchTransferFrom(oper, garbage.address,
+                          [tokenId, tokenId+1], [num,num+1], 0x0);
+
+      expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
+      expect(await token.balanceOf(oper, tokenId+1)).to.be.equal(0);
+
+      expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(num+num);
+      expect(await token.balanceOf(garbage.address, tokenId+1)).to.be.equal(num+1);
+
+      expect(await token.totalSupply(tokenId)).to.be.equal(num+num);
+      expect(await token.totalSupply(tokenId+1)).to.be.equal(num+1);
+
+      await garbage.connect(await getOper()).burn(token.address, [tokenId, tokenId+1]);
+
+      expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
+      expect(await token.balanceOf(garbage.address, tokenId+1)).to.be.equal(0);
+
+      expect(await token.totalSupply(tokenId)).to.be.equal(0);
+      expect(await token.totalSupply(tokenId+1)).to.be.equal(0);
+  })
+
 
   async function baseFlow(rnds, pattern, withDisableHatch=false) {
+
+    await garbage.setup(true);
+
     const oper = await getOperAddress();
 
     const num = rnds.length;
