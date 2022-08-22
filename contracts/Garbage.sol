@@ -48,8 +48,8 @@ contract Garbage is ERC1155Receiver, Ownable
         uint256[] calldata /*ids*/,
         uint256[] calldata /*values*/,
         bytes calldata /*data*/
-    ) external override pure returns (bytes4)
+    ) external override view returns (bytes4)
     {
-        return 0xbad00bad;
+        return (allowRecieveMode == 1 ? IERC1155Receiver.onERC1155BatchReceived.selector : bytes4(0xbad00bad));
     }
 }
