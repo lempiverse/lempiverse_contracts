@@ -3,6 +3,7 @@ const { expect } = require('chai');
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 
 const hre = require("hardhat");
+const BigNumber = hre.ethers.BigNumber;
 
 const { MAX_UINT256, ZERO_ADDRESS, ZERO_BYTES32 } = constants;
 
@@ -127,51 +128,98 @@ describe('Hatching', function () {
       await checkDistrib(9999, [], []);
   })
 
-  it('base', async function () {
-    // console.log(await hatching.getDistribution(tokenId));
 
+  async function baseFlow(rnds, pattern) {
     const oper = await getOperAddress();
 
-    expect(await token.totalSupply(distribIds[0])).to.be.equal(0);
+    const num = rnds.length;
+
+    distribIds.map(async (x) => { expect(await token.totalSupply(x)).to.be.equal(0) } )
     expect(await token.totalSupply(tokenId)).to.be.equal(0);
     expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
     expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
-    expect(await token.balanceOf(oper, distribIds[0])).to.be.equal(0);
+    distribIds.map(async (x) => { expect(await token.balanceOf(oper, x)).to.be.equal(0); } )
+
     expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
 
 
-    await token.mint(oper, tokenId, 1, 0x0);
+    await token.mint(oper, tokenId, num, 0x0);
 
-    expect(await token.totalSupply(tokenId)).to.be.equal(1);
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
 
-    expect(await token.balanceOf(oper, tokenId)).to.be.equal(1);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
     expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
 
-    await token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, 1, 0x0);
+    await token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, num, 0x0);
 
     expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
-    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(1);
-    expect(await token.balanceOf(oper, distribIds[0])).to.be.equal(0);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(num);
+    distribIds.map(async (x) => { expect(await token.balanceOf(oper, x)).to.be.equal(0); } )
+
     expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
-    expect(await token.totalSupply(distribIds[0])).to.be.equal(0);
+    distribIds.map(async (x) => { expect(await token.totalSupply(x)).to.be.equal(0); } )
+
 
     const reqId = 1;
-    await expect(vrfCoordinator.fulfillRandomWordsWithOverride(reqId, hatching.address, [1]))
+
+    await expect(vrfCoordinator.fulfillRandomWordsWithOverride(reqId, hatching.address, rnds))
         .to.emit(vrfCoordinator, "RandomWordsFulfilled")
         .withArgs(reqId, reqId, anyValue, true)
 
+    // console.log(await Promise.all(distribIds.map(async x => token.balanceOf(oper, x) )))
+
+    const checkDistribPattern = async (f) => {
+      expect(await Promise.all(distribIds.map(async x => f(x) ))).to.deep.equal(pattern);
+    }
+
+
     expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
     expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
-    expect(await token.balanceOf(oper, distribIds[0])).to.be.equal(1);
-    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(1);
-    expect(await token.totalSupply(tokenId)).to.be.equal(1);
-    expect(await token.totalSupply(distribIds[0])).to.be.equal(1);
+    checkDistribPattern(async x => token.balanceOf(oper, x));
+    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(num);
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+
+    checkDistribPattern(async x => token.totalSupply(x));
 
     await garbage.burn(token.address, [tokenId]);
     expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
 
     expect(await token.totalSupply(tokenId)).to.be.equal(0);
-    expect(await token.totalSupply(distribIds[0])).to.be.equal(1);
+
+    checkDistribPattern(async x => token.totalSupply(x));
+  }
+
+  it('base flow 1', async function () {
+    await baseFlow([1], [1,0,0])
   })
+
+  it('base flow 2', async function () {
+    await baseFlow([1, 1], [2,0,0])
+  })
+
+  it('base flow 5', async function () {
+    await baseFlow([1,1,1,1,1], [5,0,0])
+  })
+
+  it('base flow 5-321', async function () {
+    await baseFlow([1,11,12,1,50], [2,2,1])
+  })
+
+  it('base flow 5-401', async function () {
+    await baseFlow([1,8,8,1,50], [4,0,1])
+  })
+
+  it('base flow 5-041', async function () {
+    await baseFlow([14,18,18,17,50], [0,4,1])
+  })
+
+  it('base flow 5-050', async function () {
+    await baseFlow([14,18,18,17,14], [0,5,0])
+  })
+
+  it('base flow 5-005', async function () {
+    await baseFlow([54,58,58,57,54], [0,0,5])
+  })
+
 })
 
