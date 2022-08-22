@@ -62,11 +62,12 @@ describe('Hatching', function () {
     return true
   }
 
-  const checkDistrib = async (tokenId, num, ids, weights) => {
+  const checkDistrib = async (tokenId, ids, weights) => {
 
+    expect(weights.length).to.equal(ids.length);
     const distrib = await hatching.getDistribution(tokenId);
-    expect(distrib.tokenIds.length).to.equal(num);
-    expect(distrib.weights.length).to.equal(num);
+    expect(distrib.tokenIds.length).to.equal(weights.length);
+    expect(distrib.weights.length).to.equal(weights.length);
 
     var total = 0;
     for (var i=0; i<distrib.tokenIds.length; i++) {
@@ -121,13 +122,9 @@ describe('Hatching', function () {
       await hatching.setupDistribution(11111, ids, weights);
 
 
-      await checkDistrib(11111, 4, ids, weights);
-      await checkDistrib(tokenId, 3, distribIds, distribWeights);
-
-      const distrib = await hatching.getDistribution(9999);
-      expect(distrib.total).to.equal(0);
-      expect(distrib.tokenIds.length).to.equal(0);
-      expect(distrib.weights.length).to.equal(0);
+      await checkDistrib(11111, ids, weights);
+      await checkDistrib(tokenId, distribIds, distribWeights);
+      await checkDistrib(9999, [], []);
   })
 
   it('base', async function () {
