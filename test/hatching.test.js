@@ -265,5 +265,48 @@ describe('Hatching', function () {
     await baseFlow([1,18,18,18,50], [0,0,0], true)
   })
 
+
+  it('HatchingDistribution', async function () {
+    this.timeout(100000);  //add timeout.
+    const srcIds = [1000, 2000, 3000, 4000, 5000];
+    const srcWeights = [10, 0, 20, 1, 100];
+
+    console.log("please waiting for long test...");
+
+    const src = srcWeights.reduce(function(result, field, index) {
+      result[srcIds[index]] = field;
+      return result;
+    }, {})
+
+
+    hatchingDistribution.setupDistribution(tokenId, srcIds, srcWeights);
+    expect(await hatchingDistribution.canHatch(tokenId)).to.be.equal(true);
+    expect(await hatchingDistribution.canHatch(9999)).to.be.equal(false);
+
+    const distrib = await hatchingDistribution.getDistribution(tokenId);
+
+    var choice = await hatchingDistribution.makeChoice(tokenId, distrib.total);
+
+    var acc = {}
+    for (var k in src) {
+      acc[k] = 0;
+    }
+
+    const mult = 5;
+
+    for (var i=0; i<distrib.total*mult; i++) {
+      choice = await hatchingDistribution.makeChoice(tokenId, i);
+      acc[choice] ++;
+      // console.log(i, choice.toString());
+    }
+    // console.log(acc);
+
+    for (var k in src) {
+      // console.log(k, src[k], acc[k]);
+      expect(src[k] * mult).to.be.equal(acc[k]);
+    }
+  })
+
+
 })
 
