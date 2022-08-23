@@ -1,6 +1,6 @@
-# Sample Hardhat Project
+[![Node.js CI](https://github.com/glempi/lempiverse_contracts/actions/workflows/node.js.yml/badge.svg)](https://github.com/glempi/lempiverse_contracts/actions/workflows/node.js.yml)
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This are contracts for Lempiverse
 
 Try running some of the following tasks:
 
