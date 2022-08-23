@@ -10,3 +10,6 @@ doit() {
 doit "LempiverseChildMintableERC1155.sol"
 doit "LempiverseRootMintableERC1155.sol"
 doit "LempiverseNftMinter.sol"
+doit "LempiverseHatching.sol"
+doit "Garbage.sol"
+
