@@ -373,6 +373,14 @@ describe('Hatching', function () {
     expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(num);
   })
 
+  it('test wrong transfer callback', async function () {
+    const oper = await getOperAddress();
+    await expect(hatching.onERC1155Received(oper, oper, tokenId, 1, 0x0))
+      .to.be.revertedWithCustomError(hatching, 'OnlySpecificErc1155CallerAllowed');
+
+    await expect(hatching.onERC1155BatchReceived(oper, oper, [tokenId, tokenId+1], [1,2], 0x0))
+      .to.be.revertedWithCustomError(hatching, 'OnlySpecificErc1155CallerAllowed');
+  })
 
 })
 
