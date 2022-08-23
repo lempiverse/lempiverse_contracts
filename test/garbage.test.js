@@ -144,7 +144,7 @@ describe('Garbage', function () {
       expect(await token.balanceOf(garbage.address, tokenId+1)).to.be.equal(0);
 
       expect(await token.totalSupply(tokenId)).to.be.equal(0);
-      expect(await token.totalSupply(tokenId+1)).to.be.equal(0);
+      expect(await token.totalSupply(tokenId+1)).to.be.equal(1);
   })
 
 })
