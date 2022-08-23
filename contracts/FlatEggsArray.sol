@@ -51,7 +51,7 @@ abstract contract FlatEggsArray
 
         assert (value > 0);
 
-        if (value >= eggsBulkLimit) {
+        if (value > eggsBulkLimit) {
             revert TooBigValueToTransfer(value);
         }
 

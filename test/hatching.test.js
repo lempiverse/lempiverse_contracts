@@ -1,4 +1,4 @@
-const { BN, constants, expectEvent, expectRevert } = require('@openzeppelin/test-helpers');
+const { BN, constants, expectEvent } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 
@@ -101,8 +101,6 @@ describe('Hatching', function () {
     await vrfCoordinator.fundSubscription(vrfSubId.toString(), 1000_000_000_000);
     await vrfCoordinator.addConsumer(vrfSubId.toString(), hatching.address);
 
-    await hatching.setupEggsBulkLimit(200);
-
     await hatching.setupVRF(2500000, 3, mumbayKeyHash, vrfSubId.toString());
 
 
@@ -153,6 +151,7 @@ describe('Hatching', function () {
   async function baseFlow(rnds, pattern, withDisableHatch=false) {
 
     await garbage.setup(true);
+    await hatching.setupEggsBulkLimit(200);
 
     const oper = await getOperAddress();
 
@@ -307,6 +306,71 @@ describe('Hatching', function () {
       // console.log(k, src[k], acc[k]);
       expect(src[k] * mult).to.be.equal(acc[k]);
     }
+  })
+
+
+  it('test ERC1155Receiver errors', async function () {
+
+    const oper = await getOperAddress();
+
+    const num = 300;
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
+
+    expect(await hatching.eggsBulkLimit()).to.be.equal(0);
+
+
+    await token.mint(oper, tokenId, num, 0x0);
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
+
+    await expect(token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, 1, 0x0))
+        .to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+
+    const eggsBulkLimit = 200;
+    await hatching.setupEggsBulkLimit(eggsBulkLimit);
+    expect(await hatching.eggsBulkLimit()).to.be.equal(eggsBulkLimit);
+    expect(await hatching.canHatch(tokenId)).to.be.equal(true);
+
+    await expect(token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, num, 0x0))
+        .to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
+
+    await token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, 200, 0x0);
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(100);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(200);
+
+    await expect(token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, num, 0x0))
+        .to.be.revertedWith("ERC1155: insufficient balance for transfer");
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(100);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(200);
+
+
+    await hatching.setupDistribution(tokenId, [], []);
+    expect(await hatching.canHatch(tokenId)).to.be.equal(false);
+
+    await expect(token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, 100, 0x0))
+        .to.be.revertedWith("ERC1155: transfer to non ERC1155Receiver implementer");
+
+    await hatching.setupDistribution(tokenId, distribIds, distribWeights);
+    expect(await hatching.canHatch(tokenId)).to.be.equal(true);
+
+    await token.connect(await getOper()).safeTransferFrom(oper, hatching.address, tokenId, 100, 0x0);
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(num);
   })
 
 
