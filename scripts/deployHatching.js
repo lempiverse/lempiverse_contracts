@@ -14,19 +14,26 @@ const cmap =
 
   137: {'garbage':'0x0000000000000000000000000000000000000000',
         'token':'0x08bbe53cd50B8F03296E59b7FD4AEA325546921a',
-        'vrfCoordinator':'0xAE975071Be8F8eE67addBC1A82488F1C24858067'},
+        'vrfCoordinator':'0xAE975071Be8F8eE67addBC1A82488F1C24858067',
+        'keyHash':'0xcc294a196eeeb44da2888d17c0625cc88d70d9760a69d58d853ba6581a9ab0cd', //500Gwei
+        'hatchingAddress':'0x0000000000000000000000000000000000000000',
+        'subscriptionId':0},
 
   80001: {'garbage':'0x0dc671ffb45093c30049c298da93f2056eaf87c6',
           'token':'0x8509275bF7aAa781cf2946fB53e11568499899f1',
-          'vrfCoordinator':'0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed'}
+          'vrfCoordinator':'0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed',
+          'keyHash':'0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f',
+          'hatchingAddress':'0x56DCf3D4f02DEeCD6B6666E536504B91A606fafc',
+          'subscriptionId':1577},
 };
 
 async function deployHatching(chainId) {
   if (cmap[chainId].vrfCoordinator == undefined)
     return;
+  if (cmap[chainId].hatchingAddress != '0x0000000000000000000000000000000000000000')
+    return;
 
   const garbage = cmap[chainId].garbage;
-
 
   const lempiverseHatchingFactory = await hre.ethers.getContractFactory("LempiverseHatching");
   const lempiverseHatching = await lempiverseHatchingFactory.deploy(
@@ -36,8 +43,42 @@ async function deployHatching(chainId) {
   await lempiverseHatching.deployed();
   console.log("lempiverseHatching deployed to:", lempiverseHatching.address);
 
+  cmap[chainId].hatchingAddress = lempiverseHatching.address;
+}
 
-  await lempiverseHatching.functions.setup(cmap[chainId].paymentToken, cmap[chainId].token, price, tokenId, mintLimit);
+async function setupHatching(chainId) {
+
+  const lempiverseHatchingFactory = await hre.ethers.getContractFactory("LempiverseHatching");
+
+  const contract = lempiverseHatchingFactory.attach(cmap[chainId].hatchingAddress);
+
+  const callbackGasLimit = 1000000;
+  const requestConfirmations = 3;
+  const tokenId = 1;
+
+  let tx;
+  let receipt;
+
+  tx = await contract.functions.setupVRF(
+                callbackGasLimit,
+                requestConfirmations,
+                cmap[chainId].keyHash,
+                cmap[chainId].subscriptionId);
+
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+  tx = await contract.functions.setupEggsBulkLimit(200);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+  const distribIds = [1000, 1001, 1002];
+  const distribWeights = [10, 20, 30];
+
+  tx = await contract.setupDistribution(tokenId, distribIds, distribWeights);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
 }
 
 
@@ -88,6 +129,7 @@ async function main() {
 
   await deployGarbage(chainId);
   await deployHatching(chainId);
+  await setupHatching(chainId);
 
 }
 
