@@ -62,13 +62,13 @@ describe('Garbage', function () {
   it('Garbage no resetup true->false', async function () {
       await garbage.setup(true);
       await expect(garbage.setup(false))
-        .to.be.revertedWith("only once allowed");
+        .to.be.revertedWith("only once call allow");
   })
 
   it('Garbage no resetup false->true', async function () {
       await garbage.setup(false);
       await expect(garbage.setup(true))
-        .to.be.revertedWith("only once allowed");
+        .to.be.revertedWith("only once call allow");
   })
 
   it('Garbage not allowed transfer', async function () {
