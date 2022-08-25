@@ -13,7 +13,7 @@ const cmap =
         'token':'0x08bbe53cd50B8F03296E59b7FD4AEA325546921a',
         'vrfCoordinator':'0xAE975071Be8F8eE67addBC1A82488F1C24858067'},
 
-  80001: {'garbage':'0x7f81bbdceD112904d3DfCd886a586F2f94429c0F',
+  80001: {'garbage':'0x0dc671ffb45093c30049c298da93f2056eaf87c6',
           'token':'0x8509275bF7aAa781cf2946fB53e11568499899f1',
           'vrfCoordinator':'0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed'}
 };
@@ -33,10 +33,28 @@ async function main() {
     garbage = cmap[chainId].garbage;
   } else {
     const garbageFactory = await hre.ethers.getContractFactory("Garbage");
-    garbage = await garbageFactory.deploy();
-    await garbage.deployed();
-    console.log("garbage deployed to:", garbage.address);
-    garbage = garbage.address
+
+    const [signer] = await hre.ethers.getSigners();
+
+
+    const DEPLOYER = "0x4e59b44847b379578588920ca78fbf26c0b4956c";
+    const data = "0x0000000000000000000000000000000000000000000000000000000000000000"+garbageFactory.bytecode.toString().slice(2);
+
+    const from = await signer.getAddress()
+    const address = await signer.provider.call({from: from, to: DEPLOYER, data:data});
+
+    const tx = {
+        from: from,
+        to: DEPLOYER,
+        data: data,
+        gasLimit: ethers.utils.hexlify(1000000),
+    };
+    const txid = await signer.sendTransaction(tx);
+    const reciept = await txid.wait();
+    console.log(reciept);
+
+    console.log("garbage deployed to:", address);
+    garbage = address
   }
 
   const lempiverseHatchingFactory = await hre.ethers.getContractFactory("LempiverseHatching");
@@ -48,7 +66,7 @@ async function main() {
   console.log("lempiverseHatching deployed to:", lempiverseHatching.address);
 
 
-  // await contract.functions.setup(cmap[chainId].paymentToken, cmap[chainId].token, price, tokenId, mintLimit);
+  await contract.functions.setup(cmap[chainId].paymentToken, cmap[chainId].token, price, tokenId, mintLimit);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
