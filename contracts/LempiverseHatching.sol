@@ -34,6 +34,10 @@ contract LempiverseHatching is
     error CantHatchThisTokenId(uint256 tokenId);
     error ArrayLengthsForBatchInconsistence();
     error TooLargeEggsBulkLimit(uint256 value);
+    error NotTokenOwnerToRescue();
+    error MintingNotAllowedToThisContract();
+
+    event hatchEgg(address from, uint256 idIn, uint256 rnd, uint256 idOut);
 
     IERC1155Mintable public ierc1155;
     address public garbage;
@@ -89,10 +93,21 @@ contract LempiverseHatching is
         return _canHatch(id);
     }
 
+    function rescue(uint256 reqId) external {
+        Egg memory egg = toHatch[reqId];
+        if (egg.from != msg.sender) {
+            revert NotTokenOwnerToRescue();
+        }
+
+        ierc1155.safeTransferFrom(address(this), egg.from, egg.id, egg.value, bytes("rescue"));
+        delete toHatch[reqId];
+    }
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
 
         uint256 tokenId = _makeChoice(id, rnd);
+
+        emit hatchEgg(from, id, rnd, tokenId);
 
         if (tokenId == 0) {
             ierc1155.safeTransferFrom(address(this), from, id, 1, bytes("return back"));
@@ -171,6 +186,9 @@ contract LempiverseHatching is
             revert ArrayLengthsForBatchInconsistence();
         }
 
+        if (from == 0x0000000000000000000000000000000000000000) {
+            revert MintingNotAllowedToThisContract();
+        }
 
 
         for (uint256 i = 0; i < ids.length; i++) {

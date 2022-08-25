@@ -21,12 +21,17 @@ abstract contract FlatEggsArray
     error EggValueRndLengthInconsistence(uint256 eggValue, uint256 rndLength);
     error TooBigValueToTransfer(uint256 value);
 
+    event startHatch(uint256 reqId, uint256 rndLength);
+
     constructor() {
     }
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal virtual;
 
+
     function _startHatch(uint256 reqId, uint256[] memory rnds) internal {
+
+        emit startHatch(reqId, rnds.length);
 
         Egg memory egg = toHatch[reqId];
 
@@ -41,6 +46,8 @@ abstract contract FlatEggsArray
         for (uint256 j = 0; j < rnds.length; j++) {
             _hatchEgg(egg.from, egg.id, rnds[j]);
         }
+
+        delete toHatch[reqId];
     }
 
     function _addEgg(
@@ -50,6 +57,7 @@ abstract contract FlatEggsArray
         uint256 value) internal {
 
         assert (value > 0);
+        assert (from != 0x0000000000000000000000000000000000000000);
 
         if (value > eggsBulkLimit) {
             revert TooBigValueToTransfer(value);
