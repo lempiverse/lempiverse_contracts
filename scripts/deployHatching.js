@@ -49,6 +49,7 @@ async function deployHatching(chainId) {
 async function setupHatching(chainId) {
 
   const lempiverseHatchingFactory = await hre.ethers.getContractFactory("LempiverseHatching");
+  const nftFactory = await hre.ethers.getContractFactory("LempiverseChildMintableERC1155");
 
   const contract = lempiverseHatchingFactory.attach(cmap[chainId].hatchingAddress);
 
@@ -79,6 +80,13 @@ async function setupHatching(chainId) {
   reciept = await tx.wait();
   console.log(reciept.transactionHash);
 
+
+
+  const nftContract = nftFactory.attach(cmap[chainId].token);
+  const adminRole = await nftContract.DEFAULT_ADMIN_ROLE();
+  tx = await nftContract.grantRole(adminRole, cmap[chainId].hatchingAddress);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
 }
 
 
