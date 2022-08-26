@@ -19,11 +19,11 @@ const cmap =
         'hatchingAddress':'0x0000000000000000000000000000000000000000',
         'subscriptionId':0},
 
-  80001: {'garbage':'0x0dc671ffb45093c30049c298da93f2056eaf87c6',
+  80001: {'garbage':'0x10D6e7800079EA90c4bdA9a40aD63F0709bb16bE',
           'token':'0x8509275bF7aAa781cf2946fB53e11568499899f1',
           'vrfCoordinator':'0x7a1BaC17Ccc5b313516C5E16fb24f7659aA5ebed',
           'keyHash':'0x4b09e658ed251bcafeebbc69400383d49f344ace09b9576fe248bb02c003fe9f',
-          'hatchingAddress':'0x56DCf3D4f02DEeCD6B6666E536504B91A606fafc',
+          'hatchingAddress':'0x20fD86a2AD7ADF2726Ce60a72cbB3061c27cb36C',
           'subscriptionId':1577},
 };
 
@@ -100,7 +100,7 @@ async function deployGarbage(chainId) {
 
   const [signer] = await hre.ethers.getSigners();
 
-  const SALT = "0x0000000000000000000000000000000000000000000000000000000000000000";
+  const SALT = "0x0000000000000000000000000000000000000000000000000000000000000001";
   const DEPLOYER = "0x4e59b44847b379578588920ca78fbf26c0b4956c";
   const data = SALT+garbageFactory.bytecode.toString().slice(2);
 

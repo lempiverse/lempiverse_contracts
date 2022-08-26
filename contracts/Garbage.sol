@@ -18,7 +18,7 @@ contract Garbage is ERC1155Receiver
     uint256 public allowRecieveMode = 0;
 
     function setup(bool _allowRecieveMode) public {
-        require(allowRecieveMode == 0, "only once call allow");
+        require(allowRecieveMode == 0, "only one call allowed");
         allowRecieveMode = _allowRecieveMode ? 1 : 2;
     }
 
