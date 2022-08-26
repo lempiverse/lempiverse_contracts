@@ -95,7 +95,10 @@ contract LempiverseHatching is
 
     function rescue(uint256 reqId) external {
         Egg memory egg = toHatch[reqId];
-        if (egg.from != msg.sender) {
+        if (egg.value == 0) {
+            revert FlatEggsArray.WrongReqId(reqId);
+        }
+        if (egg.from != msg.sender && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
             revert NotTokenOwnerToRescue();
         }
 

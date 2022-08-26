@@ -382,5 +382,187 @@ describe('Hatching', function () {
       .to.be.revertedWithCustomError(hatching, 'OnlySpecificErc1155CallerAllowed');
   })
 
+  async function fillToken(num, oper, initInHatching) {
+
+    const operAddress = await oper.getAddress();
+
+    const initSupply = parseInt(await token.totalSupply(tokenId));
+    await token.mint(operAddress, tokenId, num, 0x0);
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(num+initSupply);
+    expect(await token.balanceOf(operAddress, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(initInHatching);
+
+    expect(await hatching.canHatch(tokenId)).to.be.equal(true);
+
+    await token.connect(oper).safeTransferFrom(operAddress, hatching.address, tokenId, num, 0x0);
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(num+initSupply);
+    expect(await token.balanceOf(operAddress, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(num+initInHatching);
+  }
+
+
+  it('rescue tokens owner', async function () {
+    const num = 1;
+    const operAddress = await getOperAddress();
+    await hatching.setupEggsBulkLimit(200);
+    await fillToken(num, await getOper(), 0);
+
+    const [_, __, oper2] = await hre.ethers.getSigners();
+    const oper2Address = await(await oper2).getAddress();
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+
+    const reqId = 1;
+    await expect(hatching.connect(oper2).rescue(reqId))
+      .to.be.revertedWithCustomError(hatching, 'NotTokenOwnerToRescue');
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+
+    await hatching.connect(await getOper()).rescue(reqId);
+
+    const oper = await getOperAddress();
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
+
+    await expect(vrfCoordinator.fulfillRandomWordsWithOverride(reqId, hatching.address, [1]))
+        .to.emit(vrfCoordinator, "RandomWordsFulfilled")
+        .withArgs(reqId, reqId, anyValue, false)
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+    expect(await token.totalSupply(tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(oper, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
+
+  })
+
+
+  it('rescue tokens admin with two users', async function () {
+    const num = 3;
+    const num2 = 2;
+    await garbage.setup(true);
+    await hatching.setupEggsBulkLimit(200);
+
+    const operAddress = await getOperAddress();
+    await fillToken(num, await getOper(), 0);
+
+    const adminAddress = await getAdminAddress();
+
+
+    const [_, __, oper2] = await hre.ethers.getSigners();
+    const oper2Address = await(await oper2).getAddress();
+
+    await token.mint(oper2Address, tokenId, num2, 0x0);
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(num2);
+    expect(await token.balanceOf(adminAddress, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
+
+    await token.connect(oper2).safeTransferFrom(oper2Address, hatching.address, tokenId, num2, 0x0);
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(adminAddress, tokenId)).to.be.equal(0);
+
+    const reqId = 1;
+
+    await expect(hatching.connect(await getAdmin()).rescue(3))
+      .to.be.revertedWithCustomError(hatching, 'WrongReqId');
+
+    await expect(hatching.connect(oper2).rescue(3))
+      .to.be.revertedWithCustomError(hatching, 'WrongReqId');
+
+
+    await hatching.connect(await getAdmin()).rescue(reqId);
+
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+    expect(await token.totalSupply(tokenId)).to.be.equal(num2+num);
+    expect(await token.balanceOf(operAddress, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(num2);
+    expect(await token.balanceOf(adminAddress, tokenId)).to.be.equal(0);
+
+    await expect(vrfCoordinator.fulfillRandomWordsWithOverride(reqId, hatching.address, [1,2,3]))
+        .to.emit(vrfCoordinator, "RandomWordsFulfilled")
+        .withArgs(reqId, reqId, anyValue, false)
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+    expect(await token.totalSupply(tokenId)).to.be.equal(num2+num);
+    expect(await token.balanceOf(operAddress, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(num2);
+    expect(await token.balanceOf(adminAddress, tokenId)).to.be.equal(0);
+
+    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(0);
+
+    expect(await Promise.all(distribIds.map(async x => await token.balanceOf(oper2Address, x) ))).to.deep.equal([0,0,0]);
+
+    await expect(vrfCoordinator.fulfillRandomWordsWithOverride(reqId+1, hatching.address, [1,2]))
+        .to.emit(vrfCoordinator, "RandomWordsFulfilled")
+        .withArgs(reqId+1, reqId+1, anyValue, true)
+        .to.emit(hatching, "startHatch")
+
+    expect(await token.balanceOf(oper2Address, tokenId)).to.be.equal(0);
+    expect(await token.totalSupply(tokenId)).to.be.equal(num+num2);
+    expect(await token.balanceOf(operAddress, tokenId)).to.be.equal(num);
+    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(num2);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(adminAddress, tokenId)).to.be.equal(0);
+
+    expect(await Promise.all(distribIds.map(async x => await token.balanceOf(oper2Address, x) ))).to.deep.equal([2,0,0]);
+  })
+
+  it('many users', async function () {
+
+    await garbage.setup(true);
+    await hatching.setupEggsBulkLimit(200);
+    const signers = await hre.ethers.getSigners();
+
+
+
+
+    var opers = [];
+    var operAddressess = [];
+
+    var num = 1;
+    var total = 0;
+    for (var i=3; i<7; i++,num++) {
+      opers.push(signers[i]);
+      operAddressess.push(await(await signers[i]).getAddress());
+      await fillToken(num, signers[i], total);
+      total += num;
+    }
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(total);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(total);
+
+    for (var addr of operAddressess) {
+      expect(await token.balanceOf(addr, tokenId)).to.be.equal(0);
+    }
+
+    rnds = []
+    for (var reqId = 1; reqId<opers.length+1; reqId++ ) {
+      rnds.push(reqId);
+      await expect(vrfCoordinator.fulfillRandomWordsWithOverride(reqId, hatching.address, rnds))
+          .to.emit(vrfCoordinator, "RandomWordsFulfilled")
+          .withArgs(reqId, reqId, anyValue, true)
+          .to.emit(hatching, "startHatch")
+    }
+
+    expect(await token.totalSupply(tokenId)).to.be.equal(total);
+    expect(await token.balanceOf(hatching.address, tokenId)).to.be.equal(0);
+    expect(await token.balanceOf(garbage.address, tokenId)).to.be.equal(total);
+
+    num = 1;
+    for (var addr of operAddressess) {
+      expect(await token.balanceOf(addr, tokenId)).to.be.equal(0);
+      expect(await Promise.all(distribIds.map(async x => await token.balanceOf(addr, x) ))).to.deep.equal([num,0,0]);
+      num++;
+    }
+
+  })
+
+
 })
 
