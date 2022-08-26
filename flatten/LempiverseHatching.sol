@@ -732,12 +732,17 @@ abstract contract FlatEggsArray
     error EggValueRndLengthInconsistence(uint256 eggValue, uint256 rndLength);
     error TooBigValueToTransfer(uint256 value);
 
+    event startHatch(uint256 reqId, uint256 rndLength);
+
     constructor() {
     }
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal virtual;
 
+
     function _startHatch(uint256 reqId, uint256[] memory rnds) internal {
+
+        emit startHatch(reqId, rnds.length);
 
         Egg memory egg = toHatch[reqId];
 
@@ -752,6 +757,8 @@ abstract contract FlatEggsArray
         for (uint256 j = 0; j < rnds.length; j++) {
             _hatchEgg(egg.from, egg.id, rnds[j]);
         }
+
+        delete toHatch[reqId];
     }
 
     function _addEgg(
@@ -761,6 +768,7 @@ abstract contract FlatEggsArray
         uint256 value) internal {
 
         assert (value > 0);
+        assert (from != 0x0000000000000000000000000000000000000000);
 
         if (value > eggsBulkLimit) {
             revert TooBigValueToTransfer(value);
@@ -1156,6 +1164,10 @@ contract LempiverseHatching is
     error CantHatchThisTokenId(uint256 tokenId);
     error ArrayLengthsForBatchInconsistence();
     error TooLargeEggsBulkLimit(uint256 value);
+    error NotTokenOwnerToRescue();
+    error MintingNotAllowedToThisContract();
+
+    event hatchEgg(address from, uint256 idIn, uint256 rnd, uint256 idOut);
 
     IERC1155Mintable public ierc1155;
     address public garbage;
@@ -1211,10 +1223,24 @@ contract LempiverseHatching is
         return _canHatch(id);
     }
 
+    function rescue(uint256 reqId) external {
+        Egg memory egg = toHatch[reqId];
+        if (egg.value == 0) {
+            revert FlatEggsArray.WrongReqId(reqId);
+        }
+        if (egg.from != msg.sender && !hasRole(DEFAULT_ADMIN_ROLE, msg.sender)) {
+            revert NotTokenOwnerToRescue();
+        }
+
+        ierc1155.safeTransferFrom(address(this), egg.from, egg.id, egg.value, bytes("rescue"));
+        delete toHatch[reqId];
+    }
 
     function _hatchEgg(address from, uint256 id, uint256 rnd) internal override {
 
         uint256 tokenId = _makeChoice(id, rnd);
+
+        emit hatchEgg(from, id, rnd, tokenId);
 
         if (tokenId == 0) {
             ierc1155.safeTransferFrom(address(this), from, id, 1, bytes("return back"));
@@ -1293,6 +1319,9 @@ contract LempiverseHatching is
             revert ArrayLengthsForBatchInconsistence();
         }
 
+        if (from == 0x0000000000000000000000000000000000000000) {
+            revert MintingNotAllowedToThisContract();
+        }
 
 
         for (uint256 i = 0; i < ids.length; i++) {
