@@ -236,8 +236,8 @@ describe('Minter', function () {
   });
 
 
-  async function mintOrNotToMint(mode, amount, initRescueUsd, initNonce=0) {
-    const value = amount * price;
+  async function mintOrNotToMintCore(mode, tokenPrice, tokenIdToMint, amount, initRescueUsd, initNonce=0) {
+    const value = amount * tokenPrice;
 
     const buyer = await getBuyer();
     const buyerAddress = await getBuyerAddress();
@@ -259,18 +259,18 @@ describe('Minter', function () {
     if (mode == 1) {
       await expect(minter.connect(buyer).buyPermit(
                             amount.toString(),
-                            tokenId.toString(),
+                            tokenIdToMint.toString(),
                             maxDeadline.toString(),
                             v, r, s)).to.be.revertedWith("LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS");
     } else {
 
       expect(await paymentToken.balanceOf(minter.address)).to.be.equal(0);
 
-      const initNftBal = await token.balanceOf(buyerAddress, tokenId);
+      const initNftBal = await token.balanceOf(buyerAddress, tokenIdToMint);
 
-      await expect(minter.connect(buyer).buyPermit(amount.toString(), tokenId.toString(), maxDeadline.toString(), v, r, s))
+      await expect(minter.connect(buyer).buyPermit(amount.toString(), tokenIdToMint.toString(), maxDeadline.toString(), v, r, s))
         .to.emit(token, "TransferSingle")
-        .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
+        .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenIdToMint, amount)
         .to.emit(paymentToken, "Transfer")
         .withArgs(buyerAddress, minter.address, value)
 
@@ -278,12 +278,16 @@ describe('Minter', function () {
 
       expect(await paymentToken.balanceOf(minter.address)).to.be.equal(value);
 
-      expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(parseInt(initNftBal) + parseInt(amount));
+      expect(await token.balanceOf(buyerAddress, tokenIdToMint)).to.be.equal(parseInt(initNftBal) + parseInt(amount));
 
       await rescueRevert(value);
       await rescueOk(value, initRescueUsd);
     }
   };
+
+  async function mintOrNotToMint(mode, amount, initRescueUsd, initNonce=0) {
+    await mintOrNotToMintCore(mode, price, tokenId, amount, initRescueUsd, initNonce);
+  }
 
   async function rescueOk(value, initRescueUsd) {
 
@@ -363,17 +367,34 @@ describe('Minter', function () {
       .to.be.revertedWith("LempiverseNftEggMinter: INSUFFICIENT_PERMISSIONS");
   });
 
-  it('setupPosition for second tokenId', async function () {
+  it('minting two kind of tokens', async function () {
     const tokenId2 = "22";
     await minter.setupPosition(tokenId2, price*2, mintLimit*2);
 
-    const [priceOut, mintLimitOut] = await minter.positions(tokenId);
+    var [priceOut, mintLimitOut] = await minter.positions(tokenId);
     expect(priceOut).to.equal(price);
     expect(mintLimitOut).to.equal(mintLimit);
 
-    const [priceOut2, mintLimitOut2] = await minter.positions(tokenId2);
+    var [priceOut2, mintLimitOut2] = await minter.positions(tokenId2);
     expect(priceOut2).to.equal(price*2);
     expect(mintLimitOut2).to.equal(mintLimit*2);
+
+    await minter.startSale();
+    await mintOrNotToMintCore(0, price*2, tokenId2, 1, 0, 0);
+    await mintOrNotToMintCore(0, price, tokenId, 1, 20, 1);
+
+    const buyerAddress = await getBuyerAddress();
+    expect(await token.balanceOf(buyerAddress, tokenId2)).to.be.equal(1);
+    expect(await token.balanceOf(buyerAddress, tokenId)).to.be.equal(1);
+
+    [priceOut, mintLimitOut] = await minter.positions(tokenId);
+    expect(priceOut).to.equal(price);
+    expect(mintLimitOut).to.equal(mintLimit-1);
+
+    [priceOut2, mintLimitOut2] = await minter.positions(tokenId2);
+    expect(priceOut2).to.equal(price*2);
+    expect(mintLimitOut2).to.equal(mintLimit*2-1);
+
   });
 
 
