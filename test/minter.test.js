@@ -70,7 +70,8 @@ describe('Minter', function () {
 
     chainId = parseInt(await paymentToken.getChainId());
 
-    await minter.setup(paymentToken.address, token.address, price, tokenId, mintLimit);
+    await minter.setup(paymentToken.address, token.address);
+    await minter.setupPosition(tokenId, price, mintLimit);
 
     adminRole = await paymentToken.DEFAULT_ADMIN_ROLE();
 
@@ -122,7 +123,7 @@ describe('Minter', function () {
                                   value, initNonce, chainId, maxDeadline);
 
     const functionSignature = await minterIFace.encodeFunctionData(
-            "buy", [amount.toString()]);
+            "buy", [amount.toString(), tokenId.toString()]);
 
     const [_, __, metaTxSender] = await hre.ethers.getSigners();
 
@@ -183,7 +184,7 @@ describe('Minter', function () {
                                 minter.address,
                                 1, 0, chainId, maxDeadline);
 
-    await expect(minter.buyPermit(1, maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
+    await expect(minter.buyPermit(1, tokenId.toString(), maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
 
 
@@ -232,6 +233,7 @@ describe('Minter', function () {
     if (mode == 1) {
       await expect(minter.connect(buyer).buyPermit(
                             amount.toString(),
+                            tokenId.toString(),
                             maxDeadline.toString(),
                             v, r, s)).to.be.revertedWith("LempiverseChildMintableERC1155: INSUFFICIENT_PERMISSIONS");
     } else {
@@ -240,7 +242,7 @@ describe('Minter', function () {
 
       const initNftBal = await token.balanceOf(buyerAddress, tokenId);
 
-      await expect(minter.connect(buyer).buyPermit(amount.toString(), maxDeadline.toString(), v, r, s))
+      await expect(minter.connect(buyer).buyPermit(amount.toString(), tokenId.toString(), maxDeadline.toString(), v, r, s))
         .to.emit(token, "TransferSingle")
         .withArgs(minter.address, ZERO_ADDRESS, buyerAddress, tokenId, amount)
         .to.emit(paymentToken, "Transfer")

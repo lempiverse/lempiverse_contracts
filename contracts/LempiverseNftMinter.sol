@@ -35,7 +35,6 @@ abstract contract LempiverseNftMinter is
 
     address public paymentToken;
     address public ierc1155Token;
-    uint256 public price;
 
     SaleState public saleState = SaleState.CLOSED;
 
@@ -64,14 +63,12 @@ abstract contract LempiverseNftMinter is
 
 
     function _spendERC20Permit(
-        uint256 qty,
+        uint256 amount,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) internal {
-
-        uint amount = price * qty;
 
         SafeERC20.safePermit(
             IERC20Permit(paymentToken),
@@ -81,12 +78,10 @@ abstract contract LempiverseNftMinter is
             deadline,
             v, r, s);
 
-        _spendERC20(qty);
+        _spendERC20(amount);
     }
 
-    function _spendERC20(uint256 qty) internal {
-
-        uint amount = price * qty;
+    function _spendERC20(uint256 amount) internal {
 
         uint balBefore = IERC20(paymentToken).balanceOf(address(this));
         IERC20(paymentToken).safeTransferFrom(_msgSender(), address(this), amount);
@@ -114,8 +109,13 @@ abstract contract LempiverseNftMinter is
 
 contract LempiverseNftEggMinter is LempiverseNftMinter
 {
-    uint256 public tokenIdToMint;
-    uint256 public mintLimit;
+    struct Position
+    {
+        uint256 price;
+        uint256 mintLimit;
+    }
+
+    mapping (uint256 => Position) public positions;
 
     constructor() {
         _setupContractId("LempiverseNftEggMinter");
@@ -125,51 +125,71 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
 
     function setup(
         address newPaymentToken,
-        address newIERC1155Token,
-        uint256 newPrice,
-        uint256 newTokenIdToMint,
-        uint256 newMintLimit
-
+        address newIERC1155Token
         ) external only(DEFAULT_ADMIN_ROLE) {
+
+        require(newPaymentToken != 0x0000000000000000000000000000000000000000, "zero newPaymentToken not allowed");
+        require(newIERC1155Token != 0x0000000000000000000000000000000000000000, "zero newIERC1155Token not allowed");
 
         paymentToken = newPaymentToken;
         ierc1155Token = newIERC1155Token;
-        price = newPrice;
-        tokenIdToMint = newTokenIdToMint;
-        mintLimit = newMintLimit;
     }
+
+    function setupPosition(
+        uint256 tokenIdToMint,
+        uint256 price,
+        uint256 mintLimit
+        ) external only(DEFAULT_ADMIN_ROLE) {
+
+        require(tokenIdToMint > 0, "tokenIdToMint must be gt 0");
+        require(price > 0, "price must be gt 0");
+        require(mintLimit > 0, "mintLimit must be gt 0");
+
+        positions[tokenIdToMint] = Position(price, mintLimit);
+    }
+
+    function getAndCheckPos(uint256 qty, uint256 tokenIdToMint) internal returns (Position memory pos) {
+
+        pos = positions[tokenIdToMint];
+
+        require (saleState == SaleState.OPEN, "sale is inactive");
+        require (qty > 0, "wrong qty");
+        require (pos.price > 0, "wrong tokenId");
+        require (pos.mintLimit >= qty, "limit exceed");
+
+    }
+
 
     function buyPermit(
         uint256 qty,
+        uint256 tokenIdToMint,
         uint256 deadline,
         uint8 v,
         bytes32 r,
         bytes32 s
     ) external {
 
-        require (saleState == SaleState.OPEN, "sale is inactive");
-        require (tokenIdToMint != 0, "tokenId is not set");
-        require (qty > 0, "wrong qty");
-        require (mintLimit >= qty, "limit exceed");
+        Position memory pos = getAndCheckPos(qty, tokenIdToMint);
 
-        _spendERC20Permit(qty, deadline, v, r, s);
+        uint256 amount = pos.price * qty;
+
+        _spendERC20Permit(amount, deadline, v, r, s);
 
         IMintable(ierc1155Token).mint(_msgSender(), tokenIdToMint, qty, bytes(""));
 
-        mintLimit -= qty;
+        positions[tokenIdToMint].mintLimit = pos.mintLimit - qty;
     }
 
-    function buy(uint256 qty) external {
+    function buy(uint256 qty, uint256 tokenIdToMint) external {
 
-        require (saleState == SaleState.OPEN, "sale is inactive");
-        require (tokenIdToMint != 0, "tokenId is not set");
-        require (qty > 0, "wrong qty");
-        require (mintLimit >= qty, "limit exceed");
+        Position memory pos = getAndCheckPos(qty, tokenIdToMint);
 
-        _spendERC20(qty);
+        uint256 amount = pos.price * qty;
+
+        _spendERC20(amount);
 
         IMintable(ierc1155Token).mint(_msgSender(), tokenIdToMint, qty, bytes(""));
 
-        mintLimit -= qty;
+        positions[tokenIdToMint].mintLimit = pos.mintLimit - qty;
     }
 }
