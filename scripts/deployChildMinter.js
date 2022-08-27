@@ -25,20 +25,41 @@ async function main() {
 
   console.log(owner.address, chainId);
 
-
-  const nftFactory = await hre.ethers.getContractFactory("LempiverseNftEggMinter");
-  const contract = await nftFactory.deploy();
+  const nftFactory = await hre.ethers.getContractFactory("LempiverseChildMintableERC1155");
+  const minterFactory = await hre.ethers.getContractFactory("LempiverseNftEggMinter");
+  const contract = await minterFactory.deploy();
 
   await contract.deployed();
 
-
   console.log("deployed to:", contract.address);
 
-  const price = 50*1e6;
-  const tokenId = 2;
-  const mintLimit = 100;
+  let tx;
+  let receipt;
 
-  await contract.functions.setup(cmap[chainId].paymentToken, cmap[chainId].token, price, tokenId, mintLimit);
+  const price = 62*1e6;
+  const tokenId = 2;
+  const mintLimit = 500;
+
+  tx = await contract.functions.setup(cmap[chainId].paymentToken, cmap[chainId].token);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+  tx = await contract.functions.setupPosition(tokenId, price, mintLimit);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+
+  const rescuerRole = await contract.functions.RESCUER_ROLE();
+  tx = await contract.functions.grantRole(rescuerRole.toString(), owner.address);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+
+  const nftContract = nftFactory.attach(cmap[chainId].token);
+  const adminRole = await nftContract.DEFAULT_ADMIN_ROLE();
+  tx = await nftContract.functions.grantRole(adminRole, contract.address);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
