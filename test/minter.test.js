@@ -187,6 +187,32 @@ describe('Minter', function () {
     await expect(minter.buyPermit(1, tokenId.toString(), maxDeadline.toString(), v, r, s)).to.be.revertedWith("sale is inactive");
   });
 
+  it('Should revert with wrong tokenId', async function () {
+
+    await minter.startSale();
+    const { v, r, s } = calcPermitVRS(
+                                paymentTokenName, key1,
+                                await getBuyerAddress(),
+                                paymentToken.address,
+                                minter.address,
+                                1, 0, chainId, maxDeadline);
+
+    await expect(minter.buyPermit(1, "9999", maxDeadline.toString(), v, r, s)).to.be.revertedWith("wrong tokenId");
+  });
+
+  it('Should revert with wrong qty', async function () {
+
+    await minter.startSale();
+    const { v, r, s } = calcPermitVRS(
+                                paymentTokenName, key1,
+                                await getBuyerAddress(),
+                                paymentToken.address,
+                                minter.address,
+                                1, 0, chainId, maxDeadline);
+
+    await expect(minter.buyPermit(0, tokenId.toString(), maxDeadline.toString(), v, r, s)).to.be.revertedWith("wrong qty");
+  });
+
 
   it('Should revert on no permission for start/stop sale', async function () {
 
@@ -329,6 +355,26 @@ describe('Minter', function () {
       .to.be.revertedWith("sale is inactive");
   });
 
+  it('setup* can be called only by admin', async function () {
+    await expect(minter.connect(await getBuyer()).setup(paymentToken.address, token.address))
+      .to.be.revertedWith("LempiverseNftEggMinter: INSUFFICIENT_PERMISSIONS");
+
+    await expect(minter.connect(await getBuyer()).setupPosition(tokenId, price, mintLimit))
+      .to.be.revertedWith("LempiverseNftEggMinter: INSUFFICIENT_PERMISSIONS");
+  });
+
+  it('setupPosition for second tokenId', async function () {
+    const tokenId2 = "22";
+    await minter.setupPosition(tokenId2, price*2, mintLimit*2);
+
+    const [priceOut, mintLimitOut] = await minter.positions(tokenId);
+    expect(priceOut).to.equal(price);
+    expect(mintLimitOut).to.equal(mintLimit);
+
+    const [priceOut2, mintLimitOut2] = await minter.positions(tokenId2);
+    expect(priceOut2).to.equal(price*2);
+    expect(mintLimitOut2).to.equal(mintLimit*2);
+  });
 
 
 });

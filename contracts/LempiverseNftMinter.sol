@@ -153,10 +153,9 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
         pos = positions[tokenIdToMint];
 
         require (saleState == SaleState.OPEN, "sale is inactive");
-        require (qty > 0, "wrong qty");
         require (pos.price > 0, "wrong tokenId");
+        require (qty > 0, "wrong qty");
         require (pos.mintLimit >= qty, "limit exceed");
-
     }
 
 
