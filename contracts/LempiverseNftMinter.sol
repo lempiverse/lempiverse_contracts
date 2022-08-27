@@ -158,6 +158,10 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
         require (pos.mintLimit >= qty, "limit exceed");
     }
 
+    function getPrice(uint256 tokenId) public view returns (uint256 price) {
+        price = positions[tokenId].price;
+    }
+
 
     function buyPermit(
         uint256 qty,
