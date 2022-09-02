@@ -3,6 +3,8 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY || "ac0974bec39a17e36ba4a6b4d238ff94
 const ALCHEMY_MAINNET_KEY = process.env.ALCHEMY_MAINNET_KEY;
 const ALCHEMY_MUMBAI_KEY = process.env.ALCHEMY_MUMBAI_KEY;
 
+
+require("hardhat-tracer");
 require("@nomiclabs/hardhat-truffle5");
 require("@nomicfoundation/hardhat-toolbox");
 
