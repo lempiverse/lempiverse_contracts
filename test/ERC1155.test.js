@@ -5,6 +5,8 @@ const { expect } = require('chai');
 
 const { shouldBehaveLikeERC1155 } = require('./ERC1155.behavior');
 const LempiverseChildMintableERC1155 = artifacts.require('LempiverseChildMintableERC1155');
+const BalanceOfBatchWrapper = artifacts.require('BalanceOfBatchWrapper');
+
 
 contract('ERC1155', function (accounts) {
   const [operator, tokenHolder, tokenBatchHolder, ...otherAccounts] = accounts;
@@ -104,6 +106,20 @@ contract('ERC1155', function (accounts) {
             expect(holderBatchBalances[i]).to.be.bignumber.equal(mintAmounts[i]);
           }
         });
+
+        it('credits the minted batch of tokens with wrapper', async function () {
+          const wrapper = await BalanceOfBatchWrapper.new();
+          const holderBatchBalances = await wrapper.balanceOfBatch(
+            this.token.address,
+            tokenBatchHolder,
+            tokenBatchIds,
+          );
+
+          for (let i = 0; i < holderBatchBalances.length; i++) {
+            expect(holderBatchBalances[i]).to.be.bignumber.equal(mintAmounts[i]);
+          }
+        });
+
       });
     });
   });
