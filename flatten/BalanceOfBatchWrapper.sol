@@ -161,7 +161,7 @@ pragma solidity ^0.8.9;
 
 contract BalanceOfBatchWrapper {
 
-    function balanceOfBatch(address token, address account, uint256[] calldata ids) external returns (uint256[] memory) {
+    function balanceOfBatch(address token, address account, uint256[] calldata ids) external view returns (uint256[] memory) {
 
         address[] memory accounts = new address[](ids.length);
 
