@@ -1,0 +1,37 @@
+idx,name,Template Name,Rarety,Element,description,Energy,Earning Bonus,Total Power,Egg After Breed,Blockchain Id Full,Blockchain Id Empty,Egg After Breed Blockchain ID
+1,Blue Kalto,petBlueFish,common,Water,"Originally a minion of Iki-Tursas, sent to land to retrieve the Pas Om.",5,40,200,Community Egg,1000001,2000001,1
+2,Green Kalto,petGreenFish,common,Air,"Originally a minion of Iki-Tursas, sent to land to retrieve the Pas Om.",5,40,200,Community Egg,1000002,2000002,1
+3,Loska,petPinkPig,common,Fire,"Loska; one of the oldest Lempings known to man, the kindest but not the smartest.",5,40,200,Community Egg,1000003,2000003,1
+4,Jasa,petBlackPinguin,common,Water,"The prankster of the Lempings, he loves to make humans laugh.",5,40,200,Community Egg,1000004,2000004,1
+5,Hanki,petGrayMouse,common,Fire,Found everywhere and nowhere,5,40,200,Community Egg,1000005,2000005,1
+6,Jotos,petGreenTucan,common,Air,Has a penchant for telling stories that are never true,5,40,200,Community Egg,1000006,2000006,1
+7,Tilsa,petBrownCow,common,Fire,"Tilsa, the calmest of Lemping, praised by children for his happy nature. It is said that the hat maker made his first hat for his Tilsa as a kid.",5,40,200,Community Egg,1000007,2000007,1
+8,Wild Loska,PetBroenPig,common,Fire,"Wild Loskas cannot be tamed, so if your garden goes empty, it is the Wild Loska who is responsible",5,40,200,Community Egg,1000008,2000008,1
+9,Utukka,petBrownBear,common,Water,As strong as he is cute the Utukka loves life by the sea,5,40,200,Community Egg,1000009,2000009,1
+10,Frozen Utukka,petWhiteBear,common,Water,The fur of Utukka turned white when he and his brother was tricked by a Jasa and caught in a snowstorm,5,40,200,Community Egg,1000010,2000010,1
+11,Riite,petGreenBrid,common,Air,"Always eager to help, stayed day and night with the Hat Maker during the construction of the Hat Machine.",5,40,200,Community Egg,1000011,2000011,1
+12,Riide,petWhiteHen,common,Air,"Unlike its siblings Riite and Riito, Riide don’t care for adventure and were therefore easily domesticated.",5,40,200,Community Egg,1000012,2000012,1
+13,Riitto,petYellowChicken,common,Air,"Known as Riitto, the most curious of the Lempings, he was the first one at the crash site. Redcliff is the home of Riito",5,40,200,Community Egg,1000013,2000013,1
+14,Gray Kohva,petGrayShark,common,Water,"Since Iki-tursas arrived, the Kohvas have been living on land. Gray Kohvas are the most common.",5,40,200,Community Egg,1000014,2000014,1
+15,Viti,petBlackBat,Common,Fire,a playful night creature who loves to dream about the stars while eating apples,5,40,200,Community Egg,1000015,2000015,1
+16,Kinos,petGreenCrocko,Uncommon,Fire,"once thought to be just underdeveloped Iki-tursas offspring, are in fact a separate species.",5,150,750,Regular Egg,1000016,2000016,2
+17,Polanne,petyellowLion,Uncommon,Fire,A true leader of Lempings,5,150,750,Regular Egg,1000017,2000017,2
+18,Blue Kohva,petBlueShark,Uncommon,Water,Kohvas born under a full moon turn Blue,5,150,750,Regular Egg,1000018,2000018,2
+19,Pink Kohva,petPinkShark,Uncommon,Water,Kohvas born during a pink sunset turn Pink,5,150,750,Regular Egg,1000019,2000019,2
+20,Kerte,petIceReindeer,Uncommon,AIr,"In the early days of Lempings, this was one of the types.",5,150,750,Regular Egg,1000020,2000020,2
+21,Kuura,petBluePeacock,Uncommon,Air,Lempi-Gardens' self-proclaimed queen,5,150,750,Regular Egg,1000021,2000021,2
+22,Kahma,petBrownMoney,Uncommon,Fire,Jasas less intelligent sidekick,5,150,750,Regular Egg,1000022,2000022,2
+23,Ice Jasa,petIcePinguin,Uncommon,AIr,"Having been born from ice, Lempings occasionally turn into ice.",5,150,750,Regular Egg,1000023,2000023,2
+24,Ice Utukka,petIceBear,Uncommon,Water,Unlike his brother he never defrosted but remained frozen ,5,150,750,Regular Egg,1000024,2000024,2
+25,Golden Tilsa,petGoldCow,Rare,Fire,The Hat Makers Tilsa ate some of the pieces from the Pas-Om and turned golden.,15,200,3000,Regular Egg,1000025,2000025,2
+26,Pink Viti,petPinkBat,Rare,Air,No longer dream of the stars since being struck by a beam of fame and fortune from the falling Pas-Om.,15,200,3000,Regular Egg,1000026,2000026,2
+27,Golden Unicorn,petGoldenUnicorn,Rare,Water,He woke up golden in the deserts near Red cliff on the night of the crash,15,200,3000,Regular Egg,1000027,2000027,2
+28,Pink Kinos,petPinkCrocko,Rare,Fire,People knew he was not Iki-Tursas' child when they observed the magic of Pas-Om infiltrate his heart,15,200,3000,Regular Egg,1000028,2000028,2
+29,Golden Kuura,petPinkPeacock,Rare,Air,Not all of the luck and fortune from the Pas-Om was preserved into the hat machine.,15,200,3000,Regular Egg,1000029,2000029,2
+30,Golden Kohva,petGoldShark,Rare,Water,On the night of the crash pieces of the falling Pas-Om fell into the sea and where eaten by a kohva that then turned golden,15,200,3000,Regular Egg,1000030,2000030,2
+31,Epic Tilsa,petEpicCow,Epic,Air,The magic of rainbows was once swallowed by him,30,300,9000,Regular Egg,1000031,2000031,2
+32,Flame Unicorn,petFireUnicorn,Epic,Fire,It is believed he is more fire than Lemping,30,300,9000,Regular Egg,1000032,2000032,2
+33,Epic Unicorn,petPinkUnicorn,Epic,Air,Said to have the ability to summon rainbows,30,300,9000,Regular Egg,1000033,2000033,2
+34,Ice Unicorn,petBlueUnicorn,Epic,Water,One of the purest forms of Lemping,30,300,9000,Regular Egg,1000034,2000034,2
+35,Fire Kahma,petFireMoneky,Epic,Fire,Not taking anything seriously he fell into the fires of manala and lives to tell the tale,30,300,9000,Regular Egg,1000035,2000035,2
+36,Flame Kohva,petFlameShark,Epic,Water,Flames engulfed him as he arose from the sea,30,300,9000,Regular Egg,1000036,2000036,2
