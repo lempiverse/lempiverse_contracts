@@ -1,0 +1,20 @@
+{
+  "image": null,
+  "external_url": "https://lempiverse.com/",
+  "description": "LempiVerse Mega Egg is an NFT which can be used to hatch a Lemping Pet.",
+  "name": "LempiVerse Mega Egg",
+  "attributes": [
+    {
+      "display_type": "number",
+      "trait_type": "Generation",
+      "value": 1
+    },
+    {
+      "trait_type": "Egg Rarity",
+      "value": 3,
+      "max_value":4
+    }
+  ],
+  "background_color": "ffffff"
+}
+
