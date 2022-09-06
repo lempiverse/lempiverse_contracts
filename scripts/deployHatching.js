@@ -73,18 +73,33 @@ async function setupHatching(chainId) {
   reciept = await tx.wait();
   console.log(reciept.transactionHash);
 
-  const distribIds = [1000, 1001, 1002];
-  const distribWeights = [10, 20, 30];
-
-  tx = await contract.setupDistribution(tokenId, distribIds, distribWeights);
-  reciept = await tx.wait();
-  console.log(reciept.transactionHash);
 
 
 
   const nftContract = nftFactory.attach(cmap[chainId].token);
   const adminRole = await nftContract.DEFAULT_ADMIN_ROLE();
   tx = await nftContract.grantRole(adminRole, cmap[chainId].hatchingAddress);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+}
+
+async function setupDistribution(chainId) {
+
+  const lempiverseHatchingFactory = await hre.ethers.getContractFactory("LempiverseHatching");
+  const contract = lempiverseHatchingFactory.attach(cmap[chainId].hatchingAddress);
+
+  const distribIds1 = [1000001,1000002,1000003,1000004,1000005,1000006,1000007,1000008,1000009,10000010,10000011,10000012,10000013,10000014,10000015];
+  const distribWeights1 = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10];
+
+  tx = await contract.setupDistribution(1, distribIds1, distribWeights1);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+
+  const distribIds2 = [1000016,1000017,1000018,1000019,1000020,1000021,1000022,1000023,1000024,1000025,1000026,1000027,1000028,1000029,1000030,1000031,1000032,1000033,1000034,1000035,1000036]
+  const distribWeights2 = [766,766,766,766,766,766,766,766,766,500,500,500,500,500,500,16,16,16,16,16,16]
+
+  tx = await contract.setupDistribution(2, distribIds2, distribWeights2);
   reciept = await tx.wait();
   console.log(reciept.transactionHash);
 }
@@ -138,7 +153,7 @@ async function main() {
   await deployGarbage(chainId);
   await deployHatching(chainId);
   await setupHatching(chainId);
-
+  await setupDistribution(chainId);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
