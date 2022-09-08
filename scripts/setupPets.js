@@ -52,8 +52,8 @@ async function main() {
 
 
   for (var i = 1; i<=36; i++) {
-    const url = "bafybeib3qe2j3nmtlw3yn24d32ljk2zpogk5stvtes4oe2fhzmn3cajdny/"+i+".json";
-    const urlb = "bafybeib3qe2j3nmtlw3yn24d32ljk2zpogk5stvtes4oe2fhzmn3cajdny/"+i+"b.json";
+    const url = "bafybeiek5ro3dermteisq33ahw6rpw6g32othzlgijhfhdjhzmitdceqdm/"+i+".json";
+    const urlb = "bafybeiek5ro3dermteisq33ahw6rpw6g32othzlgijhfhdjhzmitdceqdm/"+i+"b.json";
 
     await reg(1000000+i, url)
     await reg(2000000+i, urlb)

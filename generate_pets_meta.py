@@ -7,14 +7,14 @@ VIDEO_BASE_PATH = "ipfs://bafybeid644gc2u4wl54sa5p3kwb6flpk5zexqujdlfeda4x6tacdc
 
 table = pd.read_csv("Lempings-table.csv")
 
-# clmns = ["idx", "name", "Rarety", "Element", "description", "Energy", "Earning Bonus", "Total Power", "Egg After Breed", "Blockchain Id Full", "Blockchain Id Empty"]
+# clmns = ["idx", "name", "Rarety", "Element", "description", "Max energy", "Earning Bonus", "Total Power", "Egg After Breed", "Blockchain Id Full", "Blockchain Id Empty"]
 clmns = ["name", "description"]
-attribs = ["Rarety", "Element", "Energy", "Earning Bonus", "Total Power", "Egg After Breed"]
+attribs = ["Rarety", "Element", "Max energy", "Earning Bonus", "Total Power", "Egg After Breed"]
+withmaxval = ["Max energy", "Earning Bonus", "Total Power"]
 display_types = {}
 display_types["Earning Bonus"] = "boost_percentage"
-display_types["Energy"] = "number"
-# display_types["Total Power"] = "number"
-
+display_types["Max energy"] = "number"
+display_types["Total Power"] = "number"
 
 
 def gen(r, empty):
@@ -24,20 +24,22 @@ def gen(r, empty):
 		meta["animation_url"] = VIDEO_BASE_PATH + str(r["idx"]) + ("b.mp4" if empty else ".mp4")
 	for c in clmns:
 		meta[c] = r[c]
+
 	aa = []
+	aa.append({"trait_type":"Energy","value":("No Energy" if empty else "Full Energy")})
+
 	for c in attribs:
 		o = {"trait_type":c}
-		if c == "Energy":
-			o["value"] = 0 if empty else r[c]
+
+		o["value"] = r[c]
+		if c in withmaxval:
 			o["max_value"] = r[c]
-		else:
-			o["value"] = r[c]
 
 		if display_types.get(c) is not None:
 			o["display_type"] = display_types.get(c)
 		aa.append(o)
-	meta["attributes"] = aa
 
+	meta["attributes"] = aa
 
 	ext = str(r["idx"]) + ("b.json" if empty else ".json")
 	# print(meta)
