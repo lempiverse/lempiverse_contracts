@@ -1,18 +1,18 @@
-idx,name,Template Name,Rarety,Element,description,Max energy,Earning Bonus,Total Power,Egg After Breed,Blockchain Id Full,Blockchain Id Empty,Egg After Breed Blockchain ID
-1,Blue Kalto,petBlueFish,common,Water,"Originally a minion of Iki-Tursas, sent to land to retrieve the Pas Om.",5,40,200,Community Egg,1000001,2000001,1
-2,Green Kalto,petGreenFish,common,Air,"Originally a minion of Iki-Tursas, sent to land to retrieve the Pas Om.",5,40,200,Community Egg,1000002,2000002,1
-3,Loska,petPinkPig,common,Fire,"Loska; one of the oldest Lempings known to man, the kindest but not the smartest.",5,40,200,Community Egg,1000003,2000003,1
-4,Jasa,petBlackPinguin,common,Water,"The prankster of the Lempings, he loves to make humans laugh.",5,40,200,Community Egg,1000004,2000004,1
-5,Hanki,petGrayMouse,common,Fire,Found everywhere and nowhere,5,40,200,Community Egg,1000005,2000005,1
-6,Jotos,petGreenTucan,common,Air,Has a penchant for telling stories that are never true,5,40,200,Community Egg,1000006,2000006,1
-7,Tilsa,petBrownCow,common,Fire,"Tilsa, the calmest of Lemping, praised by children for his happy nature. It is said that the hat maker made his first hat for his Tilsa as a kid.",5,40,200,Community Egg,1000007,2000007,1
-8,Wild Loska,PetBroenPig,common,Fire,"Wild Loskas cannot be tamed, so if your garden goes empty, it is the Wild Loska who is responsible",5,40,200,Community Egg,1000008,2000008,1
-9,Utukka,petBrownBear,common,Water,As strong as he is cute the Utukka loves life by the sea,5,40,200,Community Egg,1000009,2000009,1
-10,Frozen Utukka,petWhiteBear,common,Water,The fur of Utukka turned white when he and his brother was tricked by a Jasa and caught in a snowstorm,5,40,200,Community Egg,1000010,2000010,1
-11,Riite,petGreenBrid,common,Air,"Always eager to help, stayed day and night with the Hat Maker during the construction of the Hat Machine.",5,40,200,Community Egg,1000011,2000011,1
-12,Riide,petWhiteHen,common,Air,"Unlike its siblings Riite and Riito, Riide don’t care for adventure and were therefore easily domesticated.",5,40,200,Community Egg,1000012,2000012,1
-13,Riitto,petYellowChicken,common,Air,"Known as Riitto, the most curious of the Lempings, he was the first one at the crash site. Redcliff is the home of Riito",5,40,200,Community Egg,1000013,2000013,1
-14,Gray Kohva,petGrayShark,common,Water,"Since Iki-tursas arrived, the Kohvas have been living on land. Gray Kohvas are the most common.",5,40,200,Community Egg,1000014,2000014,1
+idx,name,Template Name,Rarity,Element,description,Max energy,Earning Bonus,Total Power,Egg After Breed,Blockchain Id Full,Blockchain Id Empty,Egg After Breed Blockchain ID
+1,Blue Kalto,petBlueFish,Common,Water,"Originally a minion of Iki-Tursas, sent to land to retrieve the Pas Om.",5,40,200,Community Egg,1000001,2000001,1
+2,Green Kalto,petGreenFish,Common,Air,"Originally a minion of Iki-Tursas, sent to land to retrieve the Pas Om.",5,40,200,Community Egg,1000002,2000002,1
+3,Loska,petPinkPig,Common,Fire,"Loska; one of the oldest Lempings known to man, the kindest but not the smartest.",5,40,200,Community Egg,1000003,2000003,1
+4,Jasa,petBlackPinguin,Common,Water,"The prankster of the Lempings, he loves to make humans laugh.",5,40,200,Community Egg,1000004,2000004,1
+5,Hanki,petGrayMouse,Common,Fire,Found everywhere and nowhere,5,40,200,Community Egg,1000005,2000005,1
+6,Jotos,petGreenTucan,Common,Air,Has a penchant for telling stories that are never true,5,40,200,Community Egg,1000006,2000006,1
+7,Tilsa,petBrownCow,Common,Fire,"Tilsa, the calmest of Lemping, praised by children for his happy nature. It is said that the hat maker made his first hat for his Tilsa as a kid.",5,40,200,Community Egg,1000007,2000007,1
+8,Wild Loska,PetBroenPig,Common,Fire,"Wild Loskas cannot be tamed, so if your garden goes empty, it is the Wild Loska who is responsible",5,40,200,Community Egg,1000008,2000008,1
+9,Utukka,petBrownBear,Common,Water,As strong as he is cute the Utukka loves life by the sea,5,40,200,Community Egg,1000009,2000009,1
+10,Frozen Utukka,petWhiteBear,Common,Water,The fur of Utukka turned white when he and his brother was tricked by a Jasa and caught in a snowstorm,5,40,200,Community Egg,1000010,2000010,1
+11,Riite,petGreenBrid,Common,Air,"Always eager to help, stayed day and night with the Hat Maker during the construction of the Hat Machine.",5,40,200,Community Egg,1000011,2000011,1
+12,Riide,petWhiteHen,Common,Air,"Unlike its siblings Riite and Riito, Riide don’t care for adventure and were therefore easily domesticated.",5,40,200,Community Egg,1000012,2000012,1
+13,Riitto,petYellowChicken,Common,Air,"Known as Riitto, the most curious of the Lempings, he was the first one at the crash site. Redcliff is the home of Riito",5,40,200,Community Egg,1000013,2000013,1
+14,Gray Kohva,petGrayShark,Common,Water,"Since Iki-tursas arrived, the Kohvas have been living on land. Gray Kohvas are the most common.",5,40,200,Community Egg,1000014,2000014,1
 15,Viti,petBlackBat,Common,Fire,a playful night creature who loves to dream about the stars while eating apples,5,40,200,Community Egg,1000015,2000015,1
 16,Kinos,petGreenCrocko,Uncommon,Fire,"once thought to be just underdeveloped Iki-tursas offspring, are in fact a separate species.",5,150,750,Regular Egg,1000016,2000016,2
 17,Polanne,petyellowLion,Uncommon,Fire,A true leader of Lempings,5,150,750,Regular Egg,1000017,2000017,2

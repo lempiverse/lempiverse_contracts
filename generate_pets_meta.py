@@ -7,9 +7,9 @@ VIDEO_BASE_PATH = "ipfs://bafybeid644gc2u4wl54sa5p3kwb6flpk5zexqujdlfeda4x6tacdc
 
 table = pd.read_csv("Lempings-table.csv")
 
-# clmns = ["idx", "name", "Rarety", "Element", "description", "Max energy", "Earning Bonus", "Total Power", "Egg After Breed", "Blockchain Id Full", "Blockchain Id Empty"]
+# clmns = ["idx", "name", "Rarity", "Element", "description", "Max energy", "Earning Bonus", "Total Power", "Egg After Breed", "Blockchain Id Full", "Blockchain Id Empty"]
 clmns = ["name", "description"]
-attribs = ["Rarety", "Element", "Max energy", "Earning Bonus", "Total Power", "Egg After Breed"]
+attribs = ["Rarity", "Element", "Max energy", "Earning Bonus", "Total Power", "Egg After Breed"]
 withmaxval = ["Max energy", "Earning Bonus", "Total Power"]
 display_types = {}
 display_types["Earning Bonus"] = "boost_percentage"
@@ -26,7 +26,9 @@ def gen(r, empty):
 		meta[c] = r[c]
 
 	aa = []
-	aa.append({"trait_type":"Energy","value":("No Energy" if empty else "Full Energy")})
+	aa.append({"trait_type":"Fullness","value":("No Energy" if empty else "Full Energy")})
+	aa.append({"trait_type":"Lemping ID","value":str(r["idx"])})
+
 
 	for c in attribs:
 		o = {"trait_type":c}
@@ -34,6 +36,9 @@ def gen(r, empty):
 		o["value"] = r[c]
 		if c in withmaxval:
 			o["max_value"] = r[c]
+
+		if c == "Max energy":
+			aa.append({"trait_type":"Energy", "value":(0 if empty else r[c]), "max_value" : r[c], "display_type":"number"})
 
 		if display_types.get(c) is not None:
 			o["display_type"] = display_types.get(c)

@@ -51,9 +51,9 @@ async function main() {
   }
 
 
-  for (var i = 1; i<=36; i++) {
-    const url = "bafybeiek5ro3dermteisq33ahw6rpw6g32othzlgijhfhdjhzmitdceqdm/"+i+".json";
-    const urlb = "bafybeiek5ro3dermteisq33ahw6rpw6g32othzlgijhfhdjhzmitdceqdm/"+i+"b.json";
+  for (var i = 1; i<=15; i++) {
+    const url = "bafybeiby2rkajqgjoxdmx6hjma7bgx6lf7dvzagqjbz36htqarhawywf4y/"+i+".json";
+    const urlb = "bafybeiby2rkajqgjoxdmx6hjma7bgx6lf7dvzagqjbz36htqarhawywf4y/"+i+"b.json";
 
     await reg(1000000+i, url)
     await reg(2000000+i, urlb)
