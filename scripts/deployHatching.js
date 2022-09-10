@@ -88,7 +88,7 @@ async function setupDistribution(chainId) {
   const lempiverseHatchingFactory = await hre.ethers.getContractFactory("LempiverseHatching");
   const contract = lempiverseHatchingFactory.attach(cmap[chainId].hatchingAddress);
 
-  const distribIds1 = [1000001,1000002,1000003,1000004,1000005,1000006,1000007,1000008,1000009,10000010,10000011,10000012,10000013,10000014,10000015];
+  const distribIds1 = [1000001,1000002,1000003,1000004,1000005,1000006,1000007,1000008,1000009,1000010,1000011,1000012,1000013,1000014,1000015];
   const distribWeights1 = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10];
 
   tx = await contract.setupDistribution(1, distribIds1, distribWeights1);
