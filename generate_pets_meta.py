@@ -3,7 +3,7 @@ import json
 
 
 IMAGE_BASE_PATH = "ipfs://bafybeid644gc2u4wl54sa5p3kwb6flpk5zexqujdlfeda4x6tacdcrhwmu/"
-VIDEO_BASE_PATH = "ipfs://bafybeid644gc2u4wl54sa5p3kwb6flpk5zexqujdlfeda4x6tacdcrhwmu/Epic_MP4/"
+VIDEO_BASE_PATH = "ipfs://bafybeie37t55hofvpj4y6ng5yaete2bvmtcoyivuxdug4tvh3kewi7fdie/"
 
 table = pd.read_csv("Lempings-table.csv")
 
@@ -21,7 +21,8 @@ def gen(r, empty):
 	meta = {"external_url": "https://lempiverse.com/", "background_color": "ffffff"}
 	meta["image"] = IMAGE_BASE_PATH + str(r["idx"]) + ("b.png" if empty else ".png")
 	if r["idx"] >= 31 and r["idx"] <= 36:
-		meta["animation_url"] = VIDEO_BASE_PATH + str(r["idx"]) + ("b.mp4" if empty else ".mp4")
+		# meta["animation_url"] = VIDEO_BASE_PATH + str(r["idx"]) + ("b.mp4" if empty else ".mp4")
+		meta["image"] = VIDEO_BASE_PATH + str(r["idx"]) + ("b.gif" if empty else ".gif")
 	for c in clmns:
 		meta[c] = r[c]
 
