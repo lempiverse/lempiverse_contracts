@@ -7,6 +7,7 @@ import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 
+
 interface IERC1155Mintable is IERC1155 {
     function mint(
         address to,
@@ -20,7 +21,7 @@ interface IERC1155Mintable is IERC1155 {
 
 
 contract LempiverseGameLocker is
-    ERC721,
+    ERC721Enumerable,
     IERC1155Receiver,
     AccessControlMixin
 {
@@ -55,14 +56,43 @@ contract LempiverseGameLocker is
     uint256 public constant RANGE_WIDTH = 1000000;
 
     constructor()
-        ERC721("Lempiverse locked Pet", "LVLPET")
+        ERC721("Lempiverse locked Pets", "LVLPET")
     {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
     }
 
+
+    function setup(address _ierc1155, address _garbage) external only(DEFAULT_ADMIN_ROLE) {
+        ierc1155 = IERC1155Mintable(_ierc1155);
+        garbage = _garbage;
+    }
+
+
     //ERC165 support
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControl, ERC721, IERC165) returns (bool) {
-        return AccessControl.supportsInterface(interfaceId) || ERC721.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControl, IERC165, ERC721Enumerable) returns (bool) {
+        return AccessControl.supportsInterface(interfaceId) || ERC721Enumerable.supportsInterface(interfaceId);
+    }
+
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override(ERC721Enumerable) {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+
+    function getListOfLockedPets(address owner) external view returns (uint256[] memory, uint256[] memory){
+        uint256 total = balanceOf(owner);
+        uint256[] memory erc721 = new uint256[](total);
+        uint256[] memory erc1155 = new uint256[](total);
+        for (uint256 i=0; i<total; i++) {
+            uint256 tokenId = tokenOfOwnerByIndex(owner, i);
+            erc721[i] = tokenId;
+            erc1155[i] = tokenIdsMap[tokenId].id1155;
+        }
+        return (erc721, erc1155);
     }
 
 
@@ -100,11 +130,11 @@ contract LempiverseGameLocker is
     }
 
 
-    function stopSale() external only(DEFAULT_ADMIN_ROLE) {
+    function stop() external only(DEFAULT_ADMIN_ROLE) {
         state = State.CLOSED;
     }
 
-    function startSale() external only(DEFAULT_ADMIN_ROLE) {
+    function start() external only(DEFAULT_ADMIN_ROLE) {
         state = State.OPEN;
     }
 
@@ -161,12 +191,8 @@ contract LempiverseGameLocker is
         for (uint256 i = 0; i < ids.length; i++) {
 
             uint256 value = values[i];
-            if (value == 0) {
-                continue;
-            }
-
             for (uint256 j=0; j<value; j++) {
-                _lock(from, ids[j]);
+                _lock(from, ids[i]);
             }
         }
 
