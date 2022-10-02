@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import {AccessControlMixin, AccessControl} from "./AccessControlMixin.sol";
 import {IERC165, IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {ERC721, ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 
 
@@ -31,6 +31,9 @@ contract LempiverseGameLocker is
     error MintingNotAllowedToThisContract();
     error NotReadyToUnlock(uint256 lockTime);
     error WrongTokenIdRange(uint256 id);
+    error WrongTokenIdInList(uint256 idx, uint256 id);
+    error NotOwnedTokenIdInList(uint256 idx, uint256 id);
+
 
     struct Pos {
         uint256 id1155;
@@ -95,6 +98,23 @@ contract LempiverseGameLocker is
         return (erc721, erc1155);
     }
 
+    function resolveNftList(address owner, uint256[] memory erc721) external view 
+        returns (uint256[] memory erc1155)
+    {
+        erc1155 = new uint256[](erc721.length);
+        for (uint256 i=0; i<erc721.length; i++) {
+            uint256 id = erc721[i];
+            if (ownerOf(id) != owner) {
+                revert NotOwnedTokenIdInList(i, id);
+            }
+
+            Pos memory pos = tokenIdsMap[id];
+            if (pos.id1155 == 0) {
+                revert WrongTokenIdInList(i, id);
+            }
+            erc1155[i] = pos.id1155;
+        }
+    }
 
     function _lock(address from, uint256 id1155) internal {
         if (id1155 <= FULL_START_RANGE || id1155 > FULL_START_RANGE+RANGE_WIDTH) {
