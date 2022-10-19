@@ -29,8 +29,9 @@ module.exports = {
       accounts: [PRIVATE_KEY]
     },
     matic: {
+      gasPrice: 220_000_000_000,
       gasLimit: 60_000_000_000,
-      url: "https://rpc-mainnet.maticvigil.com",
+      url: "https://polygon-rpc.com",
       accounts: [PRIVATE_KEY]
     },
     goerli: {
