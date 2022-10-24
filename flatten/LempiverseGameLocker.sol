@@ -1816,6 +1816,8 @@ contract LempiverseGameLocker is
     error WrongTokenIdRange(uint256 id);
     error WrongTokenIdInList(uint256 idx, uint256 id);
     error NotOwnedTokenIdInList(uint256 idx, uint256 id);
+    error TransferNotAllowed();
+    error IsClosed();
 
 
     struct Pos {
@@ -1946,6 +1948,26 @@ contract LempiverseGameLocker is
     }
 
 
+    function transferFrom(
+        address,
+        address,
+        uint256
+    ) public virtual override {
+        revert TransferNotAllowed();
+    }
+
+    /**
+     * @dev See {IERC721-safeTransferFrom}.
+     */
+    function safeTransferFrom(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) public virtual override {
+        revert TransferNotAllowed();
+    }
+
     function onERC1155Received(
         address /*operator*/,
         address from,
@@ -1954,6 +1976,10 @@ contract LempiverseGameLocker is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
+        if (state != State.OPEN) {
+            revert IsClosed();
+        }
+
         if (msg.sender != address(ierc1155)) {
             revert OnlySpecificErc1155CallerAllowed(msg.sender);
         }
@@ -1978,6 +2004,10 @@ contract LempiverseGameLocker is
         bytes calldata /*data*/
     ) external override returns (bytes4)
     {
+        if (state != State.OPEN) {
+            revert IsClosed();
+        }
+
         if (msg.sender != address(ierc1155)) {
             revert OnlySpecificErc1155CallerAllowed(msg.sender);
         }
