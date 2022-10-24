@@ -1798,6 +1798,8 @@ interface IERC1155Mintable is IERC1155 {
         uint256 amount,
         bytes memory data
     ) external;
+
+    function uri(uint256 tokenId) external view returns (string memory);
 }
 
 
@@ -1808,7 +1810,8 @@ contract LempiverseGameLocker is
     IERC1155Receiver,
     AccessControlMixin
 {
-
+    using Strings for uint256;
+    
     error OnlySpecificErc1155CallerAllowed(address sender);
     error ArrayLengthsForBatchInconsistence();
     error MintingNotAllowedToThisContract();
@@ -1833,11 +1836,13 @@ contract LempiverseGameLocker is
 
     mapping (uint256 => Pos) public tokenIdsMap;
     uint256 public lastUid;
-    uint256 public minLockTime = 1 days;
+    uint256 public minLockTime = 1 minutes;
     IERC1155Mintable public ierc1155;
     address public garbage;
     State public state = State.CLOSED;
     bytes32 public constant UNLOCKER_ROLE = keccak256("UNLOCKER_ROLE");
+    string public baseURI = "";
+    string public suffixURI = "";
 
     uint256 public constant FULL_START_RANGE = 1000000;
     uint256 public constant EMPTY_START_RANGE = 2000000;
@@ -1945,6 +1950,27 @@ contract LempiverseGameLocker is
 
     function setMinLockTime(uint256 _minLockTime) external only(DEFAULT_ADMIN_ROLE) {
         minLockTime = _minLockTime;
+    }
+
+    function setURI(string calldata uri, string calldata suffix) external only(DEFAULT_ADMIN_ROLE) {
+        baseURI = uri;
+        suffixURI = suffix;
+    }
+
+    function tokenURI(uint256 id721) public view virtual override returns (string memory) {
+        _requireMinted(id721);
+
+
+        if (bytes(baseURI).length > 0) {
+            if (bytes(suffixURI).length > 0) {
+                Pos memory pos = tokenIdsMap[id721];
+                return string(abi.encodePacked(baseURI, pos.id1155.toString(), suffixURI));
+            } else {
+                return baseURI;
+            }
+        } else {
+            return "";
+        }
     }
 
 

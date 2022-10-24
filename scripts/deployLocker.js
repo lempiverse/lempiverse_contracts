@@ -30,8 +30,9 @@ async function main() {
 
   const nftFactory = await hre.ethers.getContractFactory("LempiverseGameLocker");
   const contract = await nftFactory.deploy();
-
   await contract.deployed();
+
+  // const contract = nftFactory.attach("0x13a248433F41c998245d0EDB335D97694e507871");
 
 
   console.log("deployed to:", contract.address);
@@ -39,6 +40,24 @@ async function main() {
   tx = await contract.functions.setup(token[chainId], GARBAGE);
   reciept = await tx.wait();
   console.log(reciept.transactionHash);
+
+  tx = await contract.functions.start();
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+  const unlockRole = await contract.UNLOCKER_ROLE();
+  tx = await contract.grantRole(unlockRole, owner.address);
+  reciept = await tx.wait();
+  console.log(reciept.transactionHash);
+
+  // const oneUri = "ipfs://QmarkA2m7nm9qGbzYU2FMDzfjqDTxuZW6oJztVgVqeCrNa/4.json"
+  // const suffix = ""
+  // const oneUri = "https://cloudflare-ipfs.com/ipfs/bafybeiek5ro3dermteisq33ahw6rpw6g32othzlgijhfhdjhzmitdceqdm/"
+  // const suffix = ".json"
+
+  // tx = await contract.setURI(oneUri, suffix);
+  // reciept = await tx.wait();
+  // console.log(reciept.transactionHash);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

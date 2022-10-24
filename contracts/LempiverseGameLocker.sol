@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 import {AccessControlMixin, AccessControl} from "./AccessControlMixin.sol";
 import {IERC165, IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import {ERC721, ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {ERC721, ERC721Enumerable, Strings} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 
 
@@ -15,6 +15,8 @@ interface IERC1155Mintable is IERC1155 {
         uint256 amount,
         bytes memory data
     ) external;
+
+    function uri(uint256 tokenId) external view returns (string memory);
 }
 
 
@@ -25,7 +27,8 @@ contract LempiverseGameLocker is
     IERC1155Receiver,
     AccessControlMixin
 {
-
+    using Strings for uint256;
+    
     error OnlySpecificErc1155CallerAllowed(address sender);
     error ArrayLengthsForBatchInconsistence();
     error MintingNotAllowedToThisContract();
@@ -50,11 +53,13 @@ contract LempiverseGameLocker is
 
     mapping (uint256 => Pos) public tokenIdsMap;
     uint256 public lastUid;
-    uint256 public minLockTime = 1 days;
+    uint256 public minLockTime = 1 minutes;
     IERC1155Mintable public ierc1155;
     address public garbage;
     State public state = State.CLOSED;
     bytes32 public constant UNLOCKER_ROLE = keccak256("UNLOCKER_ROLE");
+    string public baseURI = "";
+    string public suffixURI = "";
 
     uint256 public constant FULL_START_RANGE = 1000000;
     uint256 public constant EMPTY_START_RANGE = 2000000;
@@ -162,6 +167,27 @@ contract LempiverseGameLocker is
 
     function setMinLockTime(uint256 _minLockTime) external only(DEFAULT_ADMIN_ROLE) {
         minLockTime = _minLockTime;
+    }
+
+    function setURI(string calldata uri, string calldata suffix) external only(DEFAULT_ADMIN_ROLE) {
+        baseURI = uri;
+        suffixURI = suffix;
+    }
+
+    function tokenURI(uint256 id721) public view virtual override returns (string memory) {
+        _requireMinted(id721);
+
+
+        if (bytes(baseURI).length > 0) {
+            if (bytes(suffixURI).length > 0) {
+                Pos memory pos = tokenIdsMap[id721];
+                return string(abi.encodePacked(baseURI, pos.id1155.toString(), suffixURI));
+            } else {
+                return baseURI;
+            }
+        } else {
+            return "";
+        }
     }
 
 
