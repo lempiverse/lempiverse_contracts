@@ -1617,7 +1617,7 @@ contract LempiverseNftEggMinter is LempiverseNftMinter
         positions[tokenIdToMint] = Position(price, mintLimit);
     }
 
-    function getAndCheckPos(uint256 qty, uint256 tokenIdToMint) internal returns (Position memory pos) {
+    function getAndCheckPos(uint256 qty, uint256 tokenIdToMint) internal view returns (Position memory pos) {
 
         pos = positions[tokenIdToMint];
 
