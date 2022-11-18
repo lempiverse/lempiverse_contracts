@@ -14,4 +14,5 @@ doit "LempiverseHatching.sol"
 doit "Garbage.sol"
 doit "BalanceOfBatchWrapper.sol"
 doit "LempiverseGameLocker.sol"
+doit "LempiCoin.sol"
 
