@@ -2007,10 +2007,11 @@ contract LempiverseGameLockerEx is
         }
 
         uint128 flags = (id1155 >= EMPTY_START_RANGE) ? EMPTY_FLAG : 0x0;
+        uint256 shift = (id1155 >= EMPTY_START_RANGE) ? EMPTY_START_RANGE : FULL_START_RANGE;
 
         uint256 id721 = ++lastUid;
 
-        tokenIdsMap[id721] = Pos({id1155: uint128(id1155-FULL_START_RANGE), timestamp: block.timestamp, flags: flags});
+        tokenIdsMap[id721] = Pos({id1155: uint128(id1155-shift), timestamp: block.timestamp, flags: flags});
 
         _safeMint(from, id721, abi.encodePacked(id1155));
     }
