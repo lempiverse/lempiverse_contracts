@@ -28,6 +28,7 @@ interface OldLocker is IERC721 {
 
     function tokenIdsMap(uint256 tokenId) external view returns (Pos memory);
     function unlock(uint256 id721, uint256 energyUsed) external;
+    function getListOfLockedPets(address owner) external view returns (uint256[] memory, uint256[] memory);
 }
 
 
@@ -114,11 +115,11 @@ contract LempiverseGameLockerEx is
     }
 
 
-    function getListOfLockedPets(address owner) external view returns (uint256[] memory, uint256[] memory, bool[] memory){
+    function getListOfLockedPets(address owner) external view returns (uint256[] memory, uint256[] memory, bool[] memory) {
         uint256 total = balanceOf(owner);
         uint256[] memory erc721 = new uint256[](total);
         uint256[] memory erc1155 = new uint256[](total);
-        bool[] memory empty = new bool[](erc721.length);
+        bool[] memory empty = new bool[](total);
 
         for (uint256 i=0; i<total; i++) {
             uint256 tokenId = tokenOfOwnerByIndex(owner, i);
@@ -128,6 +129,34 @@ contract LempiverseGameLockerEx is
         }
         return (erc721, erc1155, empty);
     }
+
+    function getListOfLockedPetsExt(address owner) external view returns (uint256[] memory, uint256[] memory, bool[] memory) {
+
+        (uint256[] memory erc721Old, uint256[] memory erc1155Old) = oldLocker.getListOfLockedPets(owner);
+
+        uint256 total = balanceOf(owner);
+        uint256 oldLength = erc721Old.length;
+
+        uint256[] memory erc721 = new uint256[](total + oldLength);
+        uint256[] memory erc1155 = new uint256[](total + oldLength);
+        bool[] memory empty = new bool[](total + oldLength);
+
+        for (uint256 i=0; i<oldLength; i++) {
+            erc721[i] = erc721Old[i];
+            erc1155[i] = erc1155Old[i];
+            empty[i] = false;
+        }
+
+        for (uint256 i=0; i<total; i++) {
+            uint256 tokenId = tokenOfOwnerByIndex(owner, i);
+            erc721[i+oldLength] = tokenId;
+            erc1155[i+oldLength] = tokenIdsMap[tokenId].id1155;
+            empty[i+oldLength] = (tokenIdsMap[tokenId].flags & EMPTY_FLAG) != 0x0;
+        }
+
+        return (erc721, erc1155, empty);
+    }
+
 
     function resolveNftList(address owner, uint256[] memory erc721) external view 
         returns (uint256[] memory erc1155, bool[] memory empty)
