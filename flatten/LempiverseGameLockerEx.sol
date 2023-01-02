@@ -2051,6 +2051,8 @@ contract LempiverseGameLockerEx is
             } else {
                 ierc1155.safeTransferFrom(address(this), garbage, pos.id1155+FULL_START_RANGE, 1, data);
             }
+
+            _burn(id721);
         }
     }
 
