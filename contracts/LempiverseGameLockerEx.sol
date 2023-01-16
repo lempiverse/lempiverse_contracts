@@ -5,6 +5,8 @@ import {AccessControlMixin, AccessControl} from "./AccessControlMixin.sol";
 import {IERC165, IERC1155Receiver} from "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import {IERC1155} from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import {ERC721, ERC721Enumerable, Strings, IERC721} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import {ContextMixin} from "./ContextMixin.sol";
+import {NativeMetaTransaction} from "./NativeMetaTransaction.sol";
 
 
 
@@ -35,7 +37,9 @@ interface OldLocker is IERC721 {
 contract LempiverseGameLockerEx is
     ERC721Enumerable,
     IERC1155Receiver,
-    AccessControlMixin
+    AccessControlMixin,
+    ContextMixin,
+    NativeMetaTransaction
 {
     using Strings for uint256;
 
@@ -89,7 +93,20 @@ contract LempiverseGameLockerEx is
         ERC721("Lempiverse locked ext Pets", "LVLEXPET")
     {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
+        _initializeEIP712("LempiverseGameLockerEx");
     }
+
+    // This is to support Native meta transactions
+    // never use msg.sender directly, use _msgSender() instead
+    function _msgSender()
+        internal
+        override
+        view
+        returns (address sender)
+    {
+        return ContextMixin.msgSender();
+    }
+
 
 
     function setup(address _ierc1155, address _garbage, address _oldLocker) external only(DEFAULT_ADMIN_ROLE) {
