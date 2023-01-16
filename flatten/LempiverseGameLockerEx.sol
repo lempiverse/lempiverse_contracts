@@ -1853,7 +1853,7 @@ contract LempiverseGameLockerEx is
     uint256 public constant FULL_START_RANGE = 1000000;
     uint256 public constant EMPTY_START_RANGE = 2000000;
     uint256 public constant RANGE_WIDTH = 1000000;
-    uint128 public constant EXT_GID_START_RANGE = 10000;
+    uint256 public constant EXT_GID_START_RANGE = 10000;
     uint64 public constant EMPTY_FLAG = 0x1;
 
     mapping (uint256 => Pos) public tokenIdsMap;
