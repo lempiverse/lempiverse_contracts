@@ -38,6 +38,9 @@ contract LempiverseGameLockerEx is
     AccessControlMixin
 {
     using Strings for uint256;
+
+    event createTeamEvent(address owner, uint256 timestamp, uint256 id721A, uint256 id721B, uint256 id721C);
+    event createTeamEventEx(address owner, uint256 timestamp, uint256[3] id721s, uint256[3] id1155s);
     
     error OnlySpecificErc1155CallerAllowed(address sender);
     error ArrayLengthsForBatchInconsistence();
@@ -53,7 +56,8 @@ contract LempiverseGameLockerEx is
 
     struct Pos {
         uint128 id1155;
-        uint128 flags;
+        uint64  flags;
+        uint64  counter;
         uint256 timestamp;
     }
 
@@ -66,8 +70,8 @@ contract LempiverseGameLockerEx is
     uint256 public constant FULL_START_RANGE = 1000000;
     uint256 public constant EMPTY_START_RANGE = 2000000;
     uint256 public constant RANGE_WIDTH = 1000000;
-    uint128 public constant EMPTY_FLAG = 0x1;
     uint128 public constant EXT_GID_START_RANGE = 10000;
+    uint64 public constant EMPTY_FLAG = 0x1;
 
     mapping (uint256 => Pos) public tokenIdsMap;
     uint256 public lastUid = EXT_GID_START_RANGE; //to be differ from old
@@ -223,12 +227,12 @@ contract LempiverseGameLockerEx is
             revert WrongTokenIdRange(id1155);
         }
 
-        uint128 flags = (id1155 >= EMPTY_START_RANGE) ? EMPTY_FLAG : 0x0;
+        uint64 flags = (id1155 >= EMPTY_START_RANGE) ? EMPTY_FLAG : 0x0;
         uint256 shift = (id1155 >= EMPTY_START_RANGE) ? EMPTY_START_RANGE : FULL_START_RANGE;
 
         uint256 id721 = ++lastUid;
 
-        tokenIdsMap[id721] = Pos({id1155: uint128(id1155-shift), timestamp: block.timestamp, flags: flags});
+        tokenIdsMap[id721] = Pos({id1155: uint128(id1155-shift), timestamp: block.timestamp, flags: flags, counter: 0});
 
         _safeMint(from, id721, abi.encodePacked(id1155));
     }
@@ -278,6 +282,38 @@ contract LempiverseGameLockerEx is
         breedingOne(1, id721B, owner);
 
         ierc1155.mint(owner, tokenIdToMint, 1, bytes(""));
+    }
+
+    function createTeam(uint256 id721A, uint256 id721B, uint256 id721C, address owner) external only(UNLOCKER_ROLE) {
+
+        emit createTeamEvent(owner, block.timestamp, id721A, id721B, id721C);
+    }
+
+    function touchTeamate(uint256 idx, uint256 id721, address owner) internal returns (uint128){
+
+        if (ownerOf(id721) != owner) {
+            revert NotOwnedTokenIdInList(idx, id721);
+        }
+
+        Pos storage pos = tokenIdsMap[id721];
+        if (pos.id1155 == 0) {
+            revert WrongTokenIdInList(idx, id721);
+        }
+
+        pos.counter ++;
+
+        return pos.id1155;
+    }
+
+    function createTeamEx(uint256[3] calldata id721s, address owner) external only(UNLOCKER_ROLE) {
+
+        uint256[3] memory id1155s = [uint256(0),0,0];
+
+        for (uint256 idx=0; idx<3; idx++) {
+            id1155s[idx] = touchTeamate(idx, id721s[idx], owner);
+        }
+
+        emit createTeamEventEx(owner, block.timestamp, id721s, id1155s);
     }
 
 
