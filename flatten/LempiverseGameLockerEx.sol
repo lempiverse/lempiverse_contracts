@@ -2072,6 +2072,12 @@ contract LempiverseGameLockerEx is
         emit createTeamEvent(owner, block.timestamp, id721A, id721B, id721C);
     }
 
+    function createTeam(uint256 id721A, uint256 id721B, uint256 id721C) external {
+
+        emit createTeamEvent(_msgSender(), block.timestamp, id721A, id721B, id721C);
+    }
+
+
     function touchTeamate(uint256 idx, uint256 id721, address owner) internal returns (uint128){
 
         if (ownerOf(id721) != owner) {
@@ -2088,7 +2094,7 @@ contract LempiverseGameLockerEx is
         return pos.id1155;
     }
 
-    function createTeamEx(uint256[3] calldata id721s, address owner) external only(UNLOCKER_ROLE) {
+    function createTeamExCore(uint256[3] calldata id721s, address owner) internal {
 
         uint256[3] memory id1155s = [uint256(0),0,0];
 
@@ -2097,6 +2103,14 @@ contract LempiverseGameLockerEx is
         }
 
         emit createTeamEventEx(owner, block.timestamp, id721s, id1155s);
+    }
+
+    function createTeamEx(uint256[3] calldata id721s, address owner) external only(UNLOCKER_ROLE) {
+        createTeamExCore(id721s, owner);
+    }
+
+    function createTeamEx(uint256[3] calldata id721s) external {
+        createTeamExCore(id721s, _msgSender());
     }
 
 
