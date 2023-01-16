@@ -291,6 +291,7 @@ contract LempiverseGameLockerEx is
             }
 
             _burn(id721);
+            delete tokenIdsMap[id721];
         }
     }
 
@@ -313,6 +314,10 @@ contract LempiverseGameLockerEx is
 
 
     function touchTeamate(uint256 idx, uint256 id721, address owner) internal returns (uint128){
+
+        if (id721 == 0) {
+            return 0;
+        }
 
         if (ownerOf(id721) != owner) {
             revert NotOwnedTokenIdInList(idx, id721);
@@ -372,6 +377,7 @@ contract LempiverseGameLockerEx is
             }
         }
         _burn(id721);
+        delete tokenIdsMap[id721];
     }
 
 
