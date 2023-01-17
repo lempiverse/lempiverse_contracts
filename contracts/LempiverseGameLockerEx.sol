@@ -136,6 +136,7 @@ contract LempiverseGameLockerEx is
     }
 
 
+
     function getListOfLockedPets(address owner) external view returns (uint256[] memory, uint256[] memory, bool[] memory) {
         uint256 total = balanceOf(owner);
         uint256[] memory erc721 = new uint256[](total);
@@ -186,14 +187,16 @@ contract LempiverseGameLockerEx is
         empty = new bool[](erc721.length);
         for (uint256 i=0; i<erc721.length; i++) {
             uint256 id = erc721[i];
-            if (ownerOf(id) != owner) {
-                revert NotOwnedTokenIdInList(i, id);
-            }
 
             Pos memory pos = tokenIdsMap[id];
             if (pos.id1155 == 0) {
                 revert WrongTokenIdInList(i, id);
             }
+
+            if (ownerOf(id) != owner) {
+                revert NotOwnedTokenIdInList(i, id);
+            }
+
             erc1155[i] = pos.id1155;
             empty[i] = (pos.flags & EMPTY_FLAG) != 0x0;
         }
@@ -210,28 +213,30 @@ contract LempiverseGameLockerEx is
             uint256 id = erc721[i];
 
             if (id < EXT_GID_START_RANGE) {
-                if (oldLocker.ownerOf(id) != owner) {
-                    revert NotOwnedTokenIdInList(i, id);
-                }
-
                 OldLocker.Pos memory pos = oldLocker.tokenIdsMap(id);
 
                 if (pos.id1155 == 0) {
                     revert WrongTokenIdInList(i, id);
                 }
+
+                if (oldLocker.ownerOf(id) != owner) {
+                    revert NotOwnedTokenIdInList(i, id);
+                }
+
                 erc1155[i] = pos.id1155;
                 empty[i] = false;
 
             } else {
 
-                if (ownerOf(id) != owner) {
-                    revert NotOwnedTokenIdInList(i, id);
-                }
-
                 Pos memory pos = tokenIdsMap[id];
                 if (pos.id1155 == 0) {
                     revert WrongTokenIdInList(i, id);
                 }
+
+                if (ownerOf(id) != owner) {
+                    revert NotOwnedTokenIdInList(i, id);
+                }
+
                 erc1155[i] = pos.id1155;
                 empty[i] = (pos.flags & EMPTY_FLAG) != 0x0;
             }
@@ -260,14 +265,14 @@ contract LempiverseGameLockerEx is
 
         if (id721 < EXT_GID_START_RANGE) {
 
-            if (oldLocker.ownerOf(id721) != owner) {
-                revert NotOwnedTokenIdInList(idx, id721);
-            }
-
             OldLocker.Pos memory pos = oldLocker.tokenIdsMap(id721);
 
             if (pos.id1155 == 0) {
                 revert WrongTokenIdInList(idx, id721);
+            }
+
+            if (oldLocker.ownerOf(id721) != owner) {
+                revert NotOwnedTokenIdInList(idx, id721);
             }
 
             oldLocker.unlock(id721, 0);
@@ -275,13 +280,13 @@ contract LempiverseGameLockerEx is
 
         } else {
 
-            if (ownerOf(id721) != owner) {
-                revert NotOwnedTokenIdInList(idx, id721);
-            }
-
             Pos memory pos = tokenIdsMap[id721];
             if (pos.id1155 == 0) {
                 revert WrongTokenIdInList(idx, id721);
+            }
+
+            if (ownerOf(id721) != owner) {
+                revert NotOwnedTokenIdInList(idx, id721);
             }
 
             if ((pos.flags & EMPTY_FLAG) != 0x0) {
@@ -319,13 +324,13 @@ contract LempiverseGameLockerEx is
             return 0;
         }
 
-        if (ownerOf(id721) != owner) {
-            revert NotOwnedTokenIdInList(idx, id721);
-        }
-
         Pos storage pos = tokenIdsMap[id721];
         if (pos.id1155 == 0) {
             revert WrongTokenIdInList(idx, id721);
+        }
+
+        if (ownerOf(id721) != owner) {
+            revert NotOwnedTokenIdInList(idx, id721);
         }
 
         pos.counter ++;
