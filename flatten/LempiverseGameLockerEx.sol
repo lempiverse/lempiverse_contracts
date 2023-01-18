@@ -2282,7 +2282,7 @@ contract LempiverseGameLockerEx is
 {
     using Strings for uint256;
 
-    event createTeamEvent(address owner, uint256 timestamp, uint256 id721A, uint256 id721B, uint256 id721C);
+    event createTeamEvent(address owner, uint256 timestamp, uint256 id1155A, uint256 id1155B, uint256 id1155C);
     event createTeamEventEx(address owner, uint256 timestamp, uint256[3] id721s, uint256[3] id1155s);
     
     error OnlySpecificErc1155CallerAllowed(address sender);
@@ -2546,14 +2546,14 @@ contract LempiverseGameLockerEx is
         ierc1155.mint(owner, tokenIdToMint, 1, bytes(""));
     }
 
-    function createTeam(uint256 id721A, uint256 id721B, uint256 id721C, address owner) external only(UNLOCKER_ROLE) {
+    function createTeam(uint256 id1155A, uint256 id1155B, uint256 id1155C, address owner) external only(UNLOCKER_ROLE) {
 
-        emit createTeamEvent(owner, block.timestamp, id721A, id721B, id721C);
+        emit createTeamEvent(owner, block.timestamp, id1155A, id1155B, id1155C);
     }
 
-    function createTeam(uint256 id721A, uint256 id721B, uint256 id721C) external {
+    function createTeam(uint256 id1155A, uint256 id1155B, uint256 id1155C) external {
 
-        emit createTeamEvent(_msgSender(), block.timestamp, id721A, id721B, id721C);
+        emit createTeamEvent(_msgSender(), block.timestamp, id1155A, id1155B, id1155C);
     }
 
 
