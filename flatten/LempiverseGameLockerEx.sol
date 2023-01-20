@@ -2546,14 +2546,14 @@ contract LempiverseGameLockerEx is
         ierc1155.mint(owner, tokenIdToMint, 1, bytes(""));
     }
 
-    function createTeam(uint256 id1155A, uint256 id1155B, uint256 id1155C, address owner) external only(UNLOCKER_ROLE) {
+    function createTeam(uint256 timestamp, uint256 id1155A, uint256 id1155B, uint256 id1155C, address owner) external only(UNLOCKER_ROLE) {
 
-        emit createTeamEvent(owner, block.timestamp, id1155A, id1155B, id1155C);
+        emit createTeamEvent(owner, timestamp, id1155A, id1155B, id1155C);
     }
 
-    function createTeam(uint256 id1155A, uint256 id1155B, uint256 id1155C) external {
+    function createTeam(uint256 timestamp, uint256 id1155A, uint256 id1155B, uint256 id1155C) external {
 
-        emit createTeamEvent(_msgSender(), block.timestamp, id1155A, id1155B, id1155C);
+        emit createTeamEvent(_msgSender(), timestamp, id1155A, id1155B, id1155C);
     }
 
 
@@ -2577,7 +2577,7 @@ contract LempiverseGameLockerEx is
         return pos.id1155;
     }
 
-    function createTeamExCore(uint256[3] calldata id721s, address owner) internal {
+    function createTeamExCore(uint256[3] calldata id721s, address owner, uint256 timestamp) internal {
 
         uint256[3] memory id1155s = [uint256(0),0,0];
 
@@ -2585,15 +2585,15 @@ contract LempiverseGameLockerEx is
             id1155s[idx] = touchTeamate(idx, id721s[idx], owner);
         }
 
-        emit createTeamEventEx(owner, block.timestamp, id721s, id1155s);
+        emit createTeamEventEx(owner, timestamp, id721s, id1155s);
     }
 
-    function createTeamEx(uint256[3] calldata id721s, address owner) external only(UNLOCKER_ROLE) {
-        createTeamExCore(id721s, owner);
+    function createTeamEx(uint256[3] calldata id721s, address owner, uint256 timestamp) external only(UNLOCKER_ROLE) {
+        createTeamExCore(id721s, owner, timestamp);
     }
 
-    function createTeamEx(uint256[3] calldata id721s) external {
-        createTeamExCore(id721s, _msgSender());
+    function createTeamEx(uint256[3] calldata id721s, uint256 timestamp) external {
+        createTeamExCore(id721s, _msgSender(), timestamp);
     }
 
 
